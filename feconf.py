@@ -189,6 +189,9 @@ ALLOWED_INTERACTIONS = {
     'InteractiveMap': {
         'dir': os.path.join(INTERACTIONS_DIR, 'InteractiveMap')
     },
+    'ItemSelectionInput': {
+        'dir': os.path.join(INTERACTIONS_DIR, 'ItemSelectionInput')
+    },
     'LogicProof': {
         'dir': os.path.join(INTERACTIONS_DIR, 'LogicProof')
     },

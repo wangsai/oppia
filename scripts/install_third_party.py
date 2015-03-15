@@ -184,6 +184,23 @@ MATERIAL_DESIGN_ICON_NAVIGATION_FILES = [
     'ic_more_vert_black_48dp.png', 'ic_menu_black_48dp.png']
 MATERIAL_DESIGN_ICON_SOCIAL_FILES = ['ic_group_black_48dp.png']
 
+# Downloads Angular-Gridster libraries and JS-Element-Resize
+ANGULAR_GRIDSTER_REV = '0.11.7'
+ANGULAR_GRIDSTER_ROOT_NAME = 'angular-gridster-%s' % ANGULAR_GRIDSTER_REV
+ANGULAR_GRIDSTER_ZIP_URL = (
+    'https://github.com/ManifestWebDesign/angular-gridster/archive/v%s.zip'
+     % ANGULAR_GRIDSTER_REV)
+ANGULAR_GRIDSTER_ZIP_ROOT_NAME = ANGULAR_GRIDSTER_ROOT_NAME
+ANGULAR_GRIDSTER_TARGET_ROOT_NAME = ANGULAR_GRIDSTER_ROOT_NAME
+
+JS_DETECT_ELEMENT_RESIZE_REV = '0.5.3'
+JS_DETECT_ELEMENT_RESIZE_ROOT_NAME = 'javascript-detect-element-resize-%s' % JS_DETECT_ELEMENT_RESIZE_REV
+JS_DETECT_ELEMENT_RESIZE_ZIP_URL = (
+    'https://github.com/sdecima/javascript-detect-element-resize/archive/v%s.zip' % JS_DETECT_ELEMENT_RESIZE_REV)
+JS_DETECT_ELEMENT_RESIZE_ZIP_ROOT_NAME = JS_DETECT_ELEMENT_RESIZE_ROOT_NAME
+JS_DETECT_ELEMENT_RESIZE_TARGET_ROOT_NAME = JS_DETECT_ELEMENT_RESIZE_ROOT_NAME
+
+
 # Note that Angular 1.3 requires a jQuery version that is >= 2.1.1.
 JQUERY_REV = '2.1.1'
 JQUERY_URL = 'https://ajax.googleapis.com/ajax/libs/jquery/%s' % JQUERY_REV
