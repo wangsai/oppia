@@ -456,6 +456,8 @@ class StateAnswersModel(base_models.BaseModel):
     # has keys answer_string, time_taken_to_answer, session_id and
     # dynamic_interaction_info
     answers_list = ndb.JsonProperty(repeated=True, indexed=False)
+    # Store interaction type to know which calculations should be performed
+    interaction_id = ndb.StringProperty(indexed=True, required=True)
     
     @classmethod
     def get_model(cls, exploration_id, exploration_version, state_name):
@@ -466,12 +468,13 @@ class StateAnswersModel(base_models.BaseModel):
 
     @classmethod
     def create_or_update(cls, exploration_id, exploration_version, state_name,
-                         answers_list):
+                         interaction_id, answers_list):
         entity_id = cls._get_entity_id(
             exploration_id, str(exploration_version), state_name)
         instance = cls(id=entity_id, exploration_id=exploration_id,
                        exploration_version=exploration_version,
                        state_name=state_name,
+                       interaction_id=interaction_id,
                        answers_list=answers_list)
         return instance
 
@@ -504,7 +507,6 @@ class StateAnswersCalcOutputModel(base_models.BaseModel):
     # List of calculation output dicts, each of which is stored as JSON blob
     # and has keys visualization_id and visualization_opts.
     calculation_outputs = ndb.JsonProperty(repeated=True, indexed=False)
-
     
     @classmethod
     def create_or_update(cls, exploration_id, exploration_version, state_name,

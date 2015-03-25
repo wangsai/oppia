@@ -24,6 +24,7 @@ import re
 import sys
 import utils
 
+from core.domain import exp_services
 from core.platform import models
 (stats_models,) = models.Registry.import_models([models.NAMES.statistics])
 
@@ -105,7 +106,9 @@ class StateAnswers(object):
         self.exploration_id = exploration_id
         self.exploration_version = exploration_version
         self.state_name = state_name
-        self.answers_list = answers_list[:]
+        self.interaction_id = exp_services.get_interaction_id_of_state(
+            self.exploration_id, self.exploration_version, self.state_name)
+        self.answers_list = answers_list
         self.validate()
 
     def record_answer(self, exploration_id, exploration_version, state_name,
@@ -122,7 +125,7 @@ class StateAnswers(object):
     def save(self):
         state_answers_model = stats_models.StateAnswersModel.create_or_update(
             self.exploration_id, self.exploration_version, self.state_name,
-            self.answers_list)
+            self.interaction_id, self.answers_list)
         state_answers_model.save()
             
     @classmethod
@@ -202,6 +205,11 @@ class StateAnswers(object):
             raise utils.ValidationError(
                 'Expected state_name to be a string, received %s' %
                 self.state_name)
+
+        if not isinstance(self.interaction_id, basestring):
+            raise utils.ValidationError(
+                'Expected interaction_id to be a string, received %s' %
+                self.interaction_id)
         
         if not isinstance(self.answers_list, list):
             raise utils.ValidationError(
@@ -234,15 +242,17 @@ class StateAnswersCalcOutput(object):
         self.exploration_id = exploration_id
         self.exploration_version = exploration_version
         self.state_name = state_name
-        self.calculation_outputs = copy.deepcopy(calculation_outputs)
-        self.validate()
-        self.__commit_to_storage()
+        self.calculation_outputs = calculation_outputs
 
-    def __commit_to_storage(self):
+    def save(self):
+        """
+        Validate domain object and commit to storage.
+        """
+        self.validate()
         stats_models.StateAnswersCalcOutputModel.create_or_update(
             self.exploration_id, self.exploration_version, self.state_name,
             self.calculation_outputs)
-
+        
     def validate(self):
         """
         Validates StateAnswersCalcOutputModel domain object entity before
@@ -252,6 +262,8 @@ class StateAnswersCalcOutput(object):
         calculation_outputs.
         """
 
+        # TODO(msl): Add specialized validations for each visualization
+        
         # There is a danger of data overflow if answer_opts exceeds 1
         # MB. We will address this later if it happens regularly. At
         # the moment, a ValidationError is raised if an answer exceeds

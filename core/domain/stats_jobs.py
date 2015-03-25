@@ -19,11 +19,13 @@ import collections
 
 from core import jobs
 from core.platform import models
+# TODO(msl): problems with importing calculations, fix this
+#from extensions.interaction_answer_view_calculations.calculations import get_calculations_desired_for_interaction
+import feconf
 (base_models, stats_models, exp_models,) = models.Registry.import_models([
     models.NAMES.base_model, models.NAMES.statistics, models.NAMES.exploration
 ])
 transaction_services = models.Registry.import_transaction_services()
-import feconf
 import utils
 
 from google.appengine.ext import ndb
@@ -326,9 +328,10 @@ class StatisticsMRJobManager(
 
 class InteractionAnswerViewsMRJobManager(
         jobs.BaseMapReduceJobManagerForContinuousComputations):
-    """Job that calculates and creates models for interaction answer views.
-       Includes: * answer counts for all answers
-                 * some sample answers
+    """
+    Job to calculate interaction view statistics, e.g. most frequent
+    answers of multiple-choice interactions. Iterate over StateAnswer
+    objects and create StateAnswersCalcOutput objects.
     """
     @classmethod
     def _get_continuous_computation_class(cls):
@@ -340,13 +343,19 @@ class InteractionAnswerViewsMRJobManager(
 
     @staticmethod
     def map(item):
-        if InteractionAnswerViewsMRJobManager._entity_created_before_job_queued(item):
+        if InteractionAnswerViewsMRJobManager._entity_created_before_job_queued(
+                item):
             yield (item.id, item)
 
     @staticmethod
-    def reduce(id, state_answers):
-        state_answers_calc_output_model = None
-        # TODO(msl): write this        
+    def reduce(id, state_answers_model):
+        calculations = calculations.get_calculations_desired_for_interaction(
+            state_answers_model.interaction_id)
+        for calc in calculations:
+            calc_output = calc.calculate_from_state_answers_entity(
+                state_answers_model)
+            calc_output.save()
+        # TODO(msl): continue here
 
 
 class InteractionAnswerViewsAggregator(jobs.BaseContinuousComputationManager):

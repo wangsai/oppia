@@ -22,6 +22,7 @@ import copy
 import os
 import sys
 
+from core.domain import exp_services
 from core.domain import stats_domain
 from core.domain import stats_services
 from core.tests import test_utils
@@ -38,14 +39,18 @@ import utils
 class InteractionAnswerViewCalculationsTest(test_utils.GenericTestBase):
     """Tests for ExpSummary aggregations."""
 
-    def test_answer_counts_calc(self):
+    def test_answer_counts_calc_without_job(self):
         """For multiple choice interaction, test if most common answers are
         calculated correctly for interaction answer views."""
 
-        exp_id = 'dummy_exp_id'
+        exp_id = '0'
         exp_version = 1
-        state_name='dummy state name'
+        state_name='Welcome!'
 
+        # Need to load exploration because state answers model will need
+        # to get interaction_id from that.
+        exp_services.load_demo(exp_id)
+        
         dummy_answers_list = [
             {'answer_string': 'First choice', 'time_taken_to_answer': 4.,
             'session_id': 'sid1'},
@@ -73,12 +78,14 @@ class InteractionAnswerViewCalculationsTest(test_utils.GenericTestBase):
         # retrieve input state answers from storage
         state_answers = stats_services.get_state_answers_model(
             exp_id, exp_version, state_name)
+        self.assertEquals(state_answers.interaction_id,
+                          'MultipleChoiceInput')
 
         # Calculate answer counts. Input is dummy StateAnswersModel entity, 
         # output is List of pairs (values, frequencies). 
         # TODO(msl): use calculation output model here
         actual_state_answers_calc_output = (
-            calculations.AnswerCounts.calculate_from_StateAnswersEntity(
+            calculations.AnswerCounts.calculate_from_state_answers_entity(
                 state_answers))
 
         actual_calc_outputs = actual_state_answers_calc_output.calculation_outputs

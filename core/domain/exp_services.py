@@ -318,6 +318,12 @@ def export_states_to_yaml(exploration_id, version=None, width=80):
     return exploration_dict
 
 
+def get_interaction_id_of_state(exploration_id, version, state_name):
+    """Returns interaction id of a state of an exploration."""
+    exploration = get_exploration_by_id(exploration_id, version=version)
+    return exploration.states[state_name].interaction.id
+
+
 # Repository SAVE and DELETE methods.
 def apply_change_list(exploration_id, change_list):
     """Applies a changelist to a pristine exploration and returns the result.

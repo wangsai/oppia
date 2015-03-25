@@ -39,6 +39,10 @@ class BaseCalculation(object):
     answer views.
     """
 
+    # TODO(msl): make sure that calculate_from_state_answers_entity is
+    # implemented in sub-classes, i.e. if not implemented should raise
+    # not implemented exception (see elsewhere in code how to do this).
+    
     # These values should be overridden in subclasses.
     name = ''
     description = ''
@@ -54,8 +58,8 @@ class AnswerCounts(BaseCalculation):
     # TODO(msl): Implement. Not used at the moment.
     allowed_input_interactions = ['MultipleChoiceInput']
 
-    @classmethod
-    def calculate_from_StateAnswersEntity(cls, state_answers):
+    @staticmethod
+    def calculate_from_state_answers_entity(state_answers):
         """
         Directly calculate answer counts from a single StateAnswers entity,
         without using map reduce. Return list of pairs (answer_string, count).
@@ -83,3 +87,14 @@ class AnswerCounts(BaseCalculation):
         
         return state_answers_calc_output
 
+
+def get_calculations_desired_for_interaction(interaction_id):
+    """
+    Return list of calculations that should be performed for a given
+    interaction_id.
+    """
+    
+    if interaction_id == 'MultipleChoiceInput':
+        return [AnswerCounts]
+    else:
+        return []
