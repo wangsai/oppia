@@ -173,3 +173,15 @@ def get_exploration_stats(exploration_id, exploration_version):
             } for state_name in exploration.states
         },
     }
+
+
+def get_state_answers_model(exploration_id, exploration_version, state_name):
+    """
+    Get state answers domain object (this is obtained from 
+    state_answers_model instance stored in data store).
+    """
+    state_answers_model = stats_models.StateAnswersModel.get_model(
+        exploration_id, exploration_version, state_name)
+    return stats_domain.StateAnswers(
+        exploration_id, exploration_version, state_name,
+        answers_list=state_answers_model.answers_list)

@@ -459,7 +459,7 @@ class StateAnswersModel(base_models.BaseModel):
     
     @classmethod
     def get_model(cls, exploration_id, exploration_version, state_name):
-        entity_id = cls.get_entity_id(
+        entity_id = cls._get_entity_id(
             exploration_id, str(exploration_version), state_name)
         instance = cls.get(entity_id, strict=False)
         return instance
@@ -467,7 +467,7 @@ class StateAnswersModel(base_models.BaseModel):
     @classmethod
     def create_or_update(cls, exploration_id, exploration_version, state_name,
                          answers_list):
-        entity_id = cls.get_entity_id(
+        entity_id = cls._get_entity_id(
             exploration_id, str(exploration_version), state_name)
         instance = cls(id=entity_id, exploration_id=exploration_id,
                        exploration_version=exploration_version,
@@ -476,7 +476,7 @@ class StateAnswersModel(base_models.BaseModel):
         return instance
 
     @classmethod
-    def get_entity_id(cls, exploration_id, exploration_version, state_name):
+    def _get_entity_id(cls, exploration_id, exploration_version, state_name):
         return ':'.join([exploration_id, 
                          str(exploration_version),
                          state_name])

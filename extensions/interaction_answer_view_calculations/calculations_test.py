@@ -23,6 +23,7 @@ import os
 import sys
 
 from core.domain import stats_domain
+from core.domain import stats_services
 from core.tests import test_utils
 from extensions.interaction_answer_view_calculations import calculations
 import feconf
@@ -70,7 +71,7 @@ class InteractionAnswerViewCalculationsTest(test_utils.GenericTestBase):
         input_state_answers.save()
 
         # retrieve input state answers from storage
-        state_answers = stats_domain.StateAnswers.get(
+        state_answers = stats_services.get_state_answers_model(
             exp_id, exp_version, state_name)
 
         # Calculate answer counts. Input is dummy StateAnswersModel entity, 

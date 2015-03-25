@@ -105,16 +105,14 @@ class StateAnswers(object):
         self.exploration_id = exploration_id
         self.exploration_version = exploration_version
         self.state_name = state_name
-        for answer in answers_list:
-            StateAnswers.validate_answer(answer)
-        self.answers_list = copy.deepcopy(answers_list)
+        self.answers_list = answers_list[:]
         self.validate()
 
     def record_answer(self, exploration_id, exploration_version, state_name,
                       answer):
         StateAnswers.validate_answer(answer)
         self.answers_list.append(answer)
-
+        
     def record_answers(self, exploration_id, exploration_version,
                        state_name, answers_list):
         for answer in answers_list:
@@ -128,18 +126,11 @@ class StateAnswers(object):
         state_answers_model.save()
             
     @classmethod
-    def get(cls, exploration_id, exploration_version, state_name):
-        """
-        Get state answers domain object (this is obtained from 
-        state_answers_model instance stored in data store).
-        """
-        state_answers_model = stats_models.StateAnswersModel.get_model(
-            exploration_id, exploration_version, state_name)
-        return cls(exploration_id, exploration_version, state_name,
-                   answers_list=state_answers_model.answers_list)
-
-    @classmethod
     def validate_answer(cls, answer_dict):
+        # TODO(msl): Maybe add validation of answer_string that's specific
+        # to the interaction type, e.g. make sure that numeric interaction
+        # has numeric answer.
+        
         # Minimum set of keys required for answer_dicts in answers_list
         REQUIRED_ANSWER_DICT_KEYS = ['answer_string', 'time_taken_to_answer',
                                      'session_id']
