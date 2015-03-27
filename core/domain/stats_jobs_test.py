@@ -20,11 +20,13 @@ __author__ = 'Stephanie Federwisch'
 
 from core import jobs_registry
 from core.domain import event_services
+from core.domain import exp_services
 from core.domain import stats_jobs
 from core.platform import models
-(stats_models,) = models.Registry.import_models([models.NAMES.statistics])
+(stats_models, exp_models) = models.Registry.import_models([models.NAMES.statistics, models.NAMES.exploration])
 from core.tests import test_utils
 import feconf
+from datetime import datetime
 
 
 class ModifiedStatisticsAggregator(stats_jobs.StatisticsAggregator):
@@ -45,6 +47,75 @@ class ModifiedStatisticsMRJobManager(stats_jobs.StatisticsMRJobManager):
     @classmethod
     def _get_continuous_computation_class(cls):
         return ModifiedStatisticsAggregator
+
+
+class OneOffFixStartCounts(test_utils.GenericTestBase):
+    def test_job(self):
+        exp_id = 'eid'
+        exploration = self.save_new_valid_exploration(exp_id, 'owner')
+        first_init_state = exploration.init_state_name
+
+        first_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, first_init_state))
+        first_state_counter.first_entry_count = 17
+        first_state_counter.put()
+
+        for _ in range(17):
+            entity_id = stats_models.StartExplorationEventLogEntryModel.create(
+                exp_id, 1, first_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
+            entity = stats_models.StartExplorationEventLogEntryModel.get(entity_id)
+            entity.created_on = datetime(2014, 10, 5)
+            entity.put()
+
+        second_init_state = 'second init state'
+        exploration.rename_state(first_init_state, second_init_state)
+        exp_services._save_exploration('person', exploration, 'message', None)
+        metadata = exp_models.ExplorationSnapshotMetadataModel.get('%s-%s' % (
+            exp_id, 2))
+        metadata.created_on = datetime(2014, 10, 6)
+        metadata.put()
+
+        for _ in range(13):
+            entity_id = stats_models.StartExplorationEventLogEntryModel.create(
+                exp_id, 2, second_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
+            entity = stats_models.StartExplorationEventLogEntryModel.get(entity_id)
+            entity.created_on = datetime(2014, 10, 7)
+            entity.put()
+        
+        second_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, second_init_state))
+        second_state_counter.first_entry_count = -17
+        second_state_counter.put()
+
+        for _ in range(19):
+            entity_id = stats_models.StartExplorationEventLogEntryModel.create(
+                exp_id, 1, second_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
+            entity = stats_models.StartExplorationEventLogEntryModel.get(entity_id)
+            entity.created_on = datetime(2014, 10, 19)
+            entity.put()
+
+        job_id = stats_jobs.OneOffFixStartCounts.create_new()
+        stats_jobs.OneOffFixStartCounts.enqueue(job_id)
+        self.process_and_flush_pending_tasks()
+
+        first_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, first_init_state))
+        self.assertEqual(first_state_counter.first_entry_count, 0)
+        second_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, second_init_state))
+        self.assertEqual(second_state_counter.first_entry_count, 0)
+
+        job_id = stats_jobs.OneOffFixStartCounts.create_new()
+        stats_jobs.OneOffFixStartCounts.enqueue(job_id)
+        self.process_and_flush_pending_tasks()
+
+        first_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, first_init_state))
+        self.assertEqual(first_state_counter.first_entry_count, 0)
+        second_state_counter = (
+            stats_models.StateCounterModel.get_or_create(exp_id, second_init_state))
+        self.assertEqual(second_state_counter.first_entry_count, 0)
+
 
 
 class StatsAggregatorUnitTests(test_utils.GenericTestBase):

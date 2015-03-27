@@ -283,6 +283,7 @@ class StartExplorationEventLogEntryModel(base_models.BaseModel):
             params=params,
             play_type=play_type)
         start_event_entity.put()
+        return entity_id
 
 
 class StateHitEventLogEntryModel(base_models.BaseModel):
@@ -392,6 +393,11 @@ class ExplorationAnnotationsModel(base_models.BaseMapReduceBatchResultsModel):
             cls.get_all().filter(
                 cls.exploration_id == exploration_id).fetch(
                     feconf.DEFAULT_QUERY_LIMIT)]
+
+class HasOneOffFixStartCountsRunYet(base_models.BaseModel):
+    @classmethod
+    def create(cls, exp_id):
+        cls(id=exp_id).put()
 
 
 def process_submitted_answer(

@@ -16,6 +16,7 @@
 
 import ast
 import collections
+from datetime import datetime
 
 from core import jobs
 from core.platform import models
@@ -339,3 +340,63 @@ class StatisticsMRJobManager(
         stats_models.ExplorationAnnotationsModel.create(
             exp_id, str(version), num_starts, num_completions,
             state_hit_counts)
+
+
+class OneOffFixStartCounts(jobs.BaseMapReduceJobManager):
+
+    _JOB_RUN_DATE = datetime(2014, 10, 10, 23, 15)
+
+    @classmethod
+    def entity_classes_to_map_over(cls):
+        return [stats_models.StartExplorationEventLogEntryModel]
+
+    @staticmethod
+    def map(item):
+        if item.created_on > OneOffFixStartCounts._JOB_RUN_DATE:
+            pass
+        yield (item.exploration_id, { 'init_state': item.state_name })
+
+    @staticmethod
+    def reduce(key, stringified_values):
+        has_it_run = stats_models.HasOneOffFixStartCountsRunYet.get(
+            key, strict=False)
+        if has_it_run:
+            return
+        snapshots = []
+        exp_model = exp_models.ExplorationModel.get_by_id(key)
+        current_version = exp_model.version
+        snapshots_metadata = (
+            exp_models.ExplorationModel.get_snapshots_metadata(key,
+                range(current_version, 0, -1)))
+        snapshots_metadata = sorted(snapshots_metadata,
+            key=lambda snapshot: snapshot['created_on'])
+        snapshots_metadata.reverse()
+        init_state_on_job_run = None
+        for metadata in snapshots_metadata:
+            if (datetime.strptime(metadata['created_on'],
+                feconf.HUMAN_READABLE_DATETIME_FORMAT) 
+                < OneOffFixStartCounts._JOB_RUN_DATE):
+                init_state_on_job_run = (
+                    exp_models.ExplorationModel.get_version(key,
+                    metadata['version_number']).init_state_name)
+        if not init_state_on_job_run:
+            return
+        state_counters = {}
+        state_counters[init_state_on_job_run] = (
+            stats_models.StateCounterModel.get_or_create(key, init_state_on_job_run))
+        for value_str in stringified_values:
+            value = ast.literal_eval(value_str)
+            event_init_state_name = value['init_state']
+            if event_init_state_name is not init_state_on_job_run:
+                if event_init_state_name not in state_counters:
+                    state_counters[event_init_state_name] = (
+                        stats_models.StateCounterModel.get_or_create(key, event_init_state_name))
+                state_counters[event_init_state_name].first_entry_count = (
+                    state_counters[event_init_state_name].first_entry_count - 1)
+                state_counters[init_state_on_job_run].first_entry_count = (
+                    state_counters[init_state_on_job_run].first_entry_count + 1)
+
+        for state_key in state_counters:
+            state_counters[state_key].put()
+
+        stats_models.HasOneOffFixStartCountsRunYet.create(key)
