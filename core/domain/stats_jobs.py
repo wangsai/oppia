@@ -381,6 +381,7 @@ class OneOffFixStartCounts(jobs.BaseMapReduceJobManager):
                 init_state_on_job_run = (
                     exp_models.ExplorationModel.get_version(key,
                     metadata['version_number']).init_state_name)
+                break
         if not init_state_on_job_run:
             return
         state_counters = {}
@@ -389,14 +390,12 @@ class OneOffFixStartCounts(jobs.BaseMapReduceJobManager):
         for value_str in stringified_values:
             value = ast.literal_eval(value_str)
             event_init_state_name = value['init_state']
-            if event_init_state_name is not init_state_on_job_run:
+            if event_init_state_name != init_state_on_job_run:
                 if event_init_state_name not in state_counters:
                     state_counters[event_init_state_name] = (
                         stats_models.StateCounterModel.get_or_create(key, event_init_state_name))
-                state_counters[event_init_state_name].first_entry_count = (
-                    state_counters[event_init_state_name].first_entry_count - 1)
-                state_counters[init_state_on_job_run].first_entry_count = (
-                    state_counters[init_state_on_job_run].first_entry_count + 1)
+                state_counters[event_init_state_name].first_entry_count -= 1
+                state_counters[init_state_on_job_run].first_entry_count += 1
 
         for state_key in state_counters:
             state_counters[state_key].put()

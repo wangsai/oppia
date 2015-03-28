@@ -53,7 +53,13 @@ class OneOffFixStartCounts(test_utils.GenericTestBase):
     def test_job(self):
         exp_id = 'eid'
         exploration = self.save_new_valid_exploration(exp_id, 'owner')
-        first_init_state = exploration.init_state_name
+        first_init_state = 'first state name'
+        exploration.rename_state(exploration.init_state_name, first_init_state)
+        exp_services._save_exploration('person', exploration, 'message', None)
+        metadata = exp_models.ExplorationSnapshotMetadataModel.get('%s-%s' % (
+            exp_id, 2))
+        metadata.created_on = datetime(2014, 10, 3)
+        metadata.put()
 
         first_state_counter = (
             stats_models.StateCounterModel.get_or_create(exp_id, first_init_state))
@@ -62,7 +68,7 @@ class OneOffFixStartCounts(test_utils.GenericTestBase):
 
         for _ in range(17):
             entity_id = stats_models.StartExplorationEventLogEntryModel.create(
-                exp_id, 1, first_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
+                exp_id, 2, first_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
             entity = stats_models.StartExplorationEventLogEntryModel.get(entity_id)
             entity.created_on = datetime(2014, 10, 5)
             entity.put()
@@ -71,13 +77,13 @@ class OneOffFixStartCounts(test_utils.GenericTestBase):
         exploration.rename_state(first_init_state, second_init_state)
         exp_services._save_exploration('person', exploration, 'message', None)
         metadata = exp_models.ExplorationSnapshotMetadataModel.get('%s-%s' % (
-            exp_id, 2))
+            exp_id, 3))
         metadata.created_on = datetime(2014, 10, 6)
         metadata.put()
 
         for _ in range(13):
             entity_id = stats_models.StartExplorationEventLogEntryModel.create(
-                exp_id, 2, second_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
+                exp_id, 3, second_init_state, 'session_id', {}, feconf.PLAY_TYPE_NORMAL)
             entity = stats_models.StartExplorationEventLogEntryModel.get(entity_id)
             entity.created_on = datetime(2014, 10, 7)
             entity.put()
