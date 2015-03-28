@@ -363,7 +363,9 @@ class OneOffFixStartCounts(jobs.BaseMapReduceJobManager):
         if has_it_run:
             return
         snapshots = []
-        exp_model = exp_models.ExplorationModel.get_by_id(key)
+        exp_model = exp_models.ExplorationModel.get(key, strict=False)
+        if not exp_model:
+            return
         current_version = exp_model.version
         snapshots_metadata = (
             exp_models.ExplorationModel.get_snapshots_metadata(key,
