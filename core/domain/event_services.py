@@ -22,6 +22,7 @@ import inspect
 
 from core import jobs_registry
 from core.domain import exp_domain
+#from core.domain import stats_domain
 from core.platform import models
 (stats_models,) = models.Registry.import_models([models.NAMES.statistics])
 taskqueue_services = models.Registry.import_taskqueue_services()
@@ -75,12 +76,17 @@ class AnswerSubmissionEventHandler(BaseEventHandler):
 
     @classmethod
     def _handle_event(cls, exploration_id, exploration_version, state_name,
-                      handler_name, rule, answer):
+                      handler_name, rule, session_id, time_spent, answer):
         """Records an event when an answer triggers a rule."""
         # TODO(sll): Escape these args?
         stats_models.process_submitted_answer(
             exploration_id, exploration_version, state_name,
             handler_name, rule, answer)
+        # TODO(msl): Add test for this
+        from core.domain import stats_domain
+        stats_domain.StateAnswers.record_answer(            
+            exploration_id, exploration_version, state_name,
+            handler_name, session_id, time_spent, answer)
 
 
 class DefaultRuleAnswerResolutionEventHandler(BaseEventHandler):

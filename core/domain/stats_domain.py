@@ -19,6 +19,7 @@
 __author__ = 'Sean Lip'
 
 import copy
+import logging
 import operator
 import re
 import sys
@@ -90,6 +91,7 @@ class StateRuleAnswerLog(object):
             self.answers.iteritems(), key=operator.itemgetter(1),
             reverse=True)[:N]
 
+
 class StateAnswers(object):
     """Domain object that stores answers of states."""
 
@@ -111,16 +113,32 @@ class StateAnswers(object):
         self.answers_list = answers_list
         self.validate()
 
-    def record_answer(self, exploration_id, exploration_version, state_name,
-                      answer):
-        StateAnswers.validate_answer(answer)
-        self.answers_list.append(answer)
+    @classmethod
+    def record_answer(cls, exploration_id, exploration_version, state_name,
+                      handler_name, session_id, time_spent, answer_string):
+        #print "record answer:", answer_string
+
+        interaction_id = exp_services.get_interaction_id_of_state(
+            exploration_id, exploration_version, state_name)
+
+        # Construct answer_dict and validate it
+        answer_dict = {'answer_string': answer_string, 
+                       'time_taken_to_answer': time_spent,
+                       'session_id': session_id,
+                       'handler_name': handler_name,
+                       'interaction_id': interaction_id}
+        cls.validate_answer(answer_dict)
         
-    def record_answers(self, exploration_id, exploration_version,
-                       state_name, answers_list):
-        for answer in answers_list:
-            self.record_answer(
-                exploration_id, exploration_version, state_name, answer)
+        # Retrieve state_answers from storage, add answer and commit to storage
+        from core.domain import stats_services
+        state_answers = stats_services.get_state_answers(
+            exploration_id, exploration_version, state_name)
+        if state_answers:
+            state_answers.answers_list.append(answer_dict)
+        else:
+            state_answers = cls(exploration_id, exploration_version, 
+                                state_name, [answer_dict])
+        state_answers.save()
 
     def save(self):
         state_answers_model = stats_models.StateAnswersModel.create_or_update(
@@ -168,12 +186,12 @@ class StateAnswers(object):
 
         if not (sys.getsizeof(answer_dict['answer_string']) <= 
                 MAX_BYTES_PER_ANSWER_STRING):
-            # TODO(msl): find a better way to deal with long answers,
-            # e.g. just skip. At the moment, too long answers produce
-            # a ValidationError.
-            raise utils.ValidationError(
-                'answer_string is too big to be stored: %s' %
-                answer_dict['answer_string'])
+            logging.warning(
+                'answer_string is too big to be stored: %s ...' %
+                answer_dict['answer_string'][:20])
+            answer_dict['answer_string'] = (
+                'CROPPED BECAUSE TOO LONG: %s ...' % 
+                answer_dict['answer_string'][:20])
 
         if not isinstance(answer_dict['session_id'], basestring):
             raise utils.ValidationError(
@@ -208,8 +226,8 @@ class StateAnswers(object):
 
         if not isinstance(self.interaction_id, basestring):
             raise utils.ValidationError(
-                'Expected interaction_id to be a string, received %s' %
-                self.interaction_id)
+                'Expected interaction_id to be a string or None, received %s' %
+                str(self.interaction_id))
         
         if not isinstance(self.answers_list, list):
             raise utils.ValidationError(

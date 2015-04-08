@@ -408,11 +408,6 @@ def process_submitted_answer(
         logging.error(e)
         pass
 
-    # Add answer to StateAnswersModel
-    state_answers_model = StateAnswersModel.get_or_create(
-        exploration_id, exploration_version, state_name)
-    state_answers_model.record_answer(answer)
-
 
 def resolve_answers(
         exploration_id, state_name, handler_name, rule_str, answers):
@@ -488,12 +483,18 @@ class StateAnswersModel(base_models.BaseModel):
         return self.exploration_id, self.exploration_version, self.state_name
 
     def save(self):
+        """Commit to storage."""
         # This may fail if answers_list is too large.
         try:
             self.put()
         except Exception as e:
             logging.error(e)
             pass
+
+    def record_answer(self, answer):
+        # todo: validate answer
+        self.answers_list.append(answer)
+        self.save()
 
 
 class StateAnswersCalcOutputModel(base_models.BaseModel):
@@ -511,9 +512,8 @@ class StateAnswersCalcOutputModel(base_models.BaseModel):
     @classmethod
     def create_or_update(cls, exploration_id, exploration_version, state_name,
                calculation_outputs):
-        instance_id = ':'.join([exploration_id, 
-                                str(exploration_version),
-                                state_name])
+        instance_id = cls._get_entity_id(exploration_id, exploration_version,
+                                         state_name)
         instance = cls.get(instance_id, strict=False)
         if not instance:
             # create new instance
@@ -528,7 +528,19 @@ class StateAnswersCalcOutputModel(base_models.BaseModel):
                 # This may fail if answers_list is too large.
         try:
             instance.put()
-            print "STORED calculation_outputs: %s" % str(calculation_outputs)
         except Exception as e:
             logging.error(e)
             pass
+
+    @classmethod
+    def get_model(cls, exploration_id, exploration_version, state_name):
+        entity_id = cls._get_entity_id(
+            exploration_id, str(exploration_version), state_name)
+        instance = cls.get(entity_id, strict=False)
+        return instance
+
+    @classmethod
+    def _get_entity_id(cls, exploration_id, exploration_version, state_name):
+        return ':'.join([exploration_id, 
+                         str(exploration_version),
+                         state_name])

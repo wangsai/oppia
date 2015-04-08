@@ -175,13 +175,32 @@ def get_exploration_stats(exploration_id, exploration_version):
     }
 
 
-def get_state_answers_model(exploration_id, exploration_version, state_name):
+def get_state_answers(exploration_id, exploration_version, state_name):
     """
-    Get state answers domain object (this is obtained from 
-    state_answers_model instance stored in data store).
+    Get state answers domain object obtained from 
+    StateAnswersModel instance stored in data store.
     """
     state_answers_model = stats_models.StateAnswersModel.get_model(
         exploration_id, exploration_version, state_name)
-    return stats_domain.StateAnswers(
-        exploration_id, exploration_version, state_name,
-        answers_list=state_answers_model.answers_list)
+    if state_answers_model:
+        return stats_domain.StateAnswers(
+            exploration_id, exploration_version, state_name,
+            state_answers_model.answers_list)
+    else:
+        return None
+
+def get_interaction_answer_view_calc_outputs(
+        exploration_id, exploration_version, state_name):
+    """
+    Get state answers calculation output domain object obtained from 
+    StateAnswersCalcOutputModel instance stored in data store.
+    """
+    
+    calc_output_model = stats_models.StateAnswersCalcOutputModel.get_model(
+        exploration_id, exploration_version, state_name)
+    if calc_output_model:
+        return stats_domain.StateAnswersCalcOutput(
+            exploration_id, exploration_version, state_name,
+            calc_output_model.calculation_outputs)
+    else:
+        return None

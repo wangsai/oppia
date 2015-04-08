@@ -241,9 +241,15 @@ class AnswerSubmittedEventHandler(base.BaseHandler):
                 old_interaction.id))
         normalized_answer = old_interaction_instance.normalize_answer(
             answer, handler_name)
+
+        session_id = self.payload.get('session_id')
+        client_time_spent_in_secs = self.payload.get(
+            'client_time_spent_in_secs')
+        
         # TODO(sll): Should this also depend on `params`?
         event_services.AnswerSubmissionEventHandler.record(
             exploration_id, version, old_state_name, handler_name, rule_spec,
+            session_id, client_time_spent_in_secs,
             old_interaction_instance.get_stats_log_html(
                 old_interaction.customization_args, normalized_answer))
 
@@ -370,6 +376,14 @@ def submit_answer_in_tests(
     """This function should only be used by tests."""
     params['answer'] = answer
 
+    if params.has_key('session_id'):
+        session_id = params['session_id']
+    else:
+        session_id = ''
+
+    # use 0 time spent for answers submitted in tests
+    time_spent = 0.0
+
     exploration = exp_services.get_exploration_by_id(
         exploration_id, version=version)
     exp_param_specs = exploration.param_specs
@@ -387,6 +401,7 @@ def submit_answer_in_tests(
     # TODO(sll): Should this also depend on `params`?
     event_services.AnswerSubmissionEventHandler.record(
         exploration_id, version, state_name, handler_name, rule_spec,
+        session_id, time_spent,
         old_interaction_instance.get_stats_log_html(
             old_state.interaction.customization_args, normalized_answer))
 

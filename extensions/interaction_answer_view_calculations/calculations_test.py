@@ -70,13 +70,14 @@ class InteractionAnswerViewCalculationsTest(test_utils.GenericTestBase):
             'session_id': 'sid3'}
             ]
 
-        # store input state answers
+        # Store input state answers
         input_state_answers = stats_domain.StateAnswers(
             exp_id, exp_version, state_name, dummy_answers_list)
         input_state_answers.save()
 
-        # retrieve input state answers from storage
-        state_answers = stats_services.get_state_answers_model(
+        # Retrieve input state answers from storage and get corresponding
+        # StateAnswers domain object.
+        state_answers = stats_services.get_state_answers(
             exp_id, exp_version, state_name)
         self.assertEquals(state_answers.interaction_id,
                           'MultipleChoiceInput')

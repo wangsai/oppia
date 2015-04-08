@@ -321,7 +321,12 @@ def export_states_to_yaml(exploration_id, version=None, width=80):
 def get_interaction_id_of_state(exploration_id, version, state_name):
     """Returns interaction id of a state of an exploration."""
     exploration = get_exploration_by_id(exploration_id, version=version)
-    return exploration.states[state_name].interaction.id
+    if exploration.states[state_name].interaction.id:
+        return exploration.states[state_name].interaction.id
+    else:
+        # Using empty string as a place holder if no interaction id exists
+        # (this is the case for many tests).
+        return ''
 
 
 # Repository SAVE and DELETE methods.

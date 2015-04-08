@@ -61,12 +61,10 @@ class AnswerCounts(BaseCalculation):
     @staticmethod
     def calculate_from_state_answers_entity(state_answers):
         """
-        Directly calculate answer counts from a single StateAnswers entity,
-        without using map reduce. Return list of pairs (answer_string, count).
-        TODO(msl): return StateAnswersCalcOutputModel
+        Calculate answer counts from a single StateAnswers entity.
+        Return list of pairs (answer_string, count).
         """
 
-        assert isinstance(state_answers, stats_domain.StateAnswers)
         answer_strings = [answer_dict['answer_string'] for answer_dict 
                           in state_answers.answers_list]
 
@@ -84,7 +82,7 @@ class AnswerCounts(BaseCalculation):
         state_answers_calc_output = stats_domain.StateAnswersCalcOutput(
             state_answers.exploration_id, state_answers.exploration_version,
             state_answers.state_name, calc_outputs)
-        
+
         return state_answers_calc_output
 
 

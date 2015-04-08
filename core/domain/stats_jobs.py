@@ -19,8 +19,6 @@ import collections
 
 from core import jobs
 from core.platform import models
-# TODO(msl): problems with importing calculations, fix this
-#from extensions.interaction_answer_view_calculations.calculations import get_calculations_desired_for_interaction
 import feconf
 (base_models, stats_models, exp_models,) = models.Registry.import_models([
     models.NAMES.base_model, models.NAMES.statistics, models.NAMES.exploration
@@ -343,19 +341,24 @@ class InteractionAnswerViewsMRJobManager(
 
     @staticmethod
     def map(item):
+        # TODO(msl): check if thsi works:
+        from extensions.interaction_answer_view_calculations import calculations
+
         if InteractionAnswerViewsMRJobManager._entity_created_before_job_queued(
                 item):
-            yield (item.id, item)
+            # TODO(msl): this should be specified by interactions themselves
+            calculations = calculations.get_calculations_desired_for_interaction(
+                item.interaction_id)
+
+            for calc in calculations:
+                calc_output = calc.calculate_from_state_answers_entity(
+                    item)
+                calc_output.save()
+                # TODO(msl): continue here
 
     @staticmethod
     def reduce(id, state_answers_model):
-        calculations = calculations.get_calculations_desired_for_interaction(
-            state_answers_model.interaction_id)
-        for calc in calculations:
-            calc_output = calc.calculate_from_state_answers_entity(
-                state_answers_model)
-            calc_output.save()
-        # TODO(msl): continue here
+        pass
 
 
 class InteractionAnswerViewsAggregator(jobs.BaseContinuousComputationManager):
@@ -367,5 +370,15 @@ class InteractionAnswerViewsAggregator(jobs.BaseContinuousComputationManager):
         return [
             feconf.EVENT_TYPE_ANSWER_SUBMITTED]
 
+    @classmethod
+    def _get_realtime_datastore_class(cls):
+        return StatisticsRealtimeModel
+
+    @classmethod
+    def _get_batch_job_manager_class(cls):
+        return InteractionAnswerViewsMRJobManager
+
+
+    
     # TODO(msl): continue writing this
 
