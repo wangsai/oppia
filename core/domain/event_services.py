@@ -82,7 +82,6 @@ class AnswerSubmissionEventHandler(BaseEventHandler):
         stats_models.process_submitted_answer(
             exploration_id, exploration_version, state_name,
             handler_name, rule, answer)
-        # TODO(msl): Add test for this
         from core.domain import stats_domain
         stats_domain.StateAnswers.record_answer(            
             exploration_id, exploration_version, state_name,

@@ -341,20 +341,20 @@ class InteractionAnswerViewsMRJobManager(
 
     @staticmethod
     def map(item):
-        # TODO(msl): check if thsi works:
         from extensions.interaction_answer_view_calculations import calculations
 
         if InteractionAnswerViewsMRJobManager._entity_created_before_job_queued(
                 item):
+
             # TODO(msl): this should be specified by interactions themselves
-            calculations = calculations.get_calculations_desired_for_interaction(
-                item.interaction_id)
+            calculations = (
+                calculations.get_calculations_desired_for_interaction(
+                item.interaction_id))
 
             for calc in calculations:
                 calc_output = calc.calculate_from_state_answers_entity(
                     item)
                 calc_output.save()
-                # TODO(msl): continue here
 
     @staticmethod
     def reduce(id, state_answers_model):
@@ -377,8 +377,7 @@ class InteractionAnswerViewsAggregator(jobs.BaseContinuousComputationManager):
     @classmethod
     def _get_batch_job_manager_class(cls):
         return InteractionAnswerViewsMRJobManager
-
-
     
-    # TODO(msl): continue writing this
+    # TODO(msl): continue writing this, e.g. make sure continous jobs listens
+    # to correct events (especially when answer recorded).
 

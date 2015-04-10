@@ -56,7 +56,7 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
     ALL_CONTINUOUS_COMPUTATION_MANAGERS_FOR_TESTS = [
         ModifiedStatisticsAggregator]
 
-    def _record_start(self, exp_id, exp_version, state_name, session_id):
+    def _record_start(self, exp_id, exp_version, state, session_id):
         event_services.StartExplorationEventHandler.record(
             exp_id, exp_version, state, session_id, {},
             feconf.PLAY_TYPE_NORMAL)
@@ -84,7 +84,8 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
             self.process_and_flush_pending_tasks()
 
             model_id = '%s:%s' % (exp_id, exp_version)
-            output_model = stats_models.ExplorationAnnotationsModel.get(model_id)
+            output_model = stats_models.ExplorationAnnotationsModel.get(
+                model_id)
             self.assertEqual(output_model.num_starts, 2)
             self.assertEqual(output_model.num_completions, 0)
 
@@ -110,7 +111,8 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
             self.process_and_flush_pending_tasks()
 
             model_id = '%s:%s' % (exp_id, exp_version)
-            output_model = stats_models.ExplorationAnnotationsModel.get(model_id)
+            output_model = stats_models.ExplorationAnnotationsModel.get(
+                model_id)
             self.assertEqual(output_model.num_starts, 2)
             self.assertEqual(output_model.num_completions, 2)
 
@@ -139,7 +141,8 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
             self.process_and_flush_pending_tasks()
 
             model_id = '%s:%s' % (exp_id, exp_version)
-            output_model = stats_models.ExplorationAnnotationsModel.get(model_id)
+            output_model = stats_models.ExplorationAnnotationsModel.get(
+                model_id)
             self.assertEqual(output_model.num_starts, 2)
             self.assertEqual(output_model.num_completions, 1)
 
@@ -173,13 +176,15 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
             ModifiedStatisticsAggregator.start_computation()
             self.assertEqual(self.count_jobs_in_taskqueue(), 1)
             self.process_and_flush_pending_tasks()
-            results = ModifiedStatisticsAggregator.get_statistics(exp_id_1, 'all')
+            results = ModifiedStatisticsAggregator.get_statistics(
+                exp_id_1, 'all')
             self.assertDictContainsSubset({
                 'start_exploration_count': 2,
                 'complete_exploration_count': 0,
                 'state_hit_counts': EMPTY_STATE_HIT_COUNTS_DICT,
             }, results)
-            results = ModifiedStatisticsAggregator.get_statistics(exp_id_2, 'all')
+            results = ModifiedStatisticsAggregator.get_statistics(
+                exp_id_2, 'all')
             self.assertDictContainsSubset({
                 'start_exploration_count': 1,
                 'complete_exploration_count': 0,
@@ -191,13 +196,15 @@ class StatsAggregatorUnitTests(test_utils.GenericTestBase):
             self._record_start(exp_id_1, exp_version, state_1_1, 'session2')
             self._record_start(exp_id_2, exp_version, state_2_1, 'session3')
             self.process_and_flush_pending_tasks()
-            results = ModifiedStatisticsAggregator.get_statistics(exp_id_1, 'all')
+            results = ModifiedStatisticsAggregator.get_statistics(
+                exp_id_1, 'all')
             self.assertDictContainsSubset({
                 'start_exploration_count': 3,
                 'complete_exploration_count': 0,
                 'state_hit_counts': EMPTY_STATE_HIT_COUNTS_DICT,
             }, results)
-            results = ModifiedStatisticsAggregator.get_statistics(exp_id_2, 'all')
+            results = ModifiedStatisticsAggregator.get_statistics(
+                exp_id_2, 'all')
             self.assertDictContainsSubset({
                 'start_exploration_count': 2,
                 'complete_exploration_count': 0,
@@ -311,7 +318,8 @@ class InteractionAnswerViewsAggregatorTests(test_utils.GenericTestBase):
                      'data': [['answer1', 2], ['answer2', 1]],
                      'title': 'Answer counts'}}]
 
-            self.assertEqual(calculation_outputs, expected_calculation_outputs)
+            self.assertEqual(calculation_outputs, 
+                             expected_calculation_outputs)
 
             # get job output of second state and check it
             calculation_outputs = (
@@ -325,7 +333,8 @@ class InteractionAnswerViewsAggregatorTests(test_utils.GenericTestBase):
                      'data': [['answer3', 1]],
                      'title': 'Answer counts'}}]
 
-            self.assertEqual(calculation_outputs, expected_calculation_outputs)
+            self.assertEqual(calculation_outputs, 
+                             expected_calculation_outputs)
 
 
 

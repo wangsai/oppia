@@ -116,7 +116,6 @@ class StateAnswers(object):
     @classmethod
     def record_answer(cls, exploration_id, exploration_version, state_name,
                       handler_name, session_id, time_spent, answer_string):
-        #print "record answer:", answer_string
 
         interaction_id = exp_services.get_interaction_id_of_state(
             exploration_id, exploration_version, state_name)
@@ -226,7 +225,7 @@ class StateAnswers(object):
 
         if not isinstance(self.interaction_id, basestring):
             raise utils.ValidationError(
-                'Expected interaction_id to be a string or None, received %s' %
+                'Expected interaction_id to be a string, received %s' %
                 str(self.interaction_id))
         
         if not isinstance(self.answers_list, list):
