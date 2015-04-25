@@ -156,6 +156,9 @@ ALLOWED_RTE_EXTENSIONS = {
     'Collapsible': {
         'dir': os.path.join(RTE_EXTENSIONS_DIR, 'Collapsible')
     },
+    'Html5Video': {
+        'dir': os.path.join(RTE_EXTENSIONS_DIR, 'Html5Video')
+    },
     'Image': {
         'dir': os.path.join(RTE_EXTENSIONS_DIR, 'Image')
     },
