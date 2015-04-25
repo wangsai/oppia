@@ -21,6 +21,7 @@
 
 var RICH_TEXT_COMPONENTS = {
   Collapsible: require('./Collapsible/protractor.js'),
+  Html5Video: require('./Html5Video/protractor.js'),
   Image: require('./Image/protractor.js'),
   Link: require('./Link/protractor.js'),
   Math: require('./Math/protractor.js'),
