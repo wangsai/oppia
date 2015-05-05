@@ -1191,6 +1191,7 @@ oppia.directive('schemaBasedUnicodeEditor', [function() {
       $scope.doUnicodeParamsExist = ($scope.allowedParameterNames.length > 0);
 
       $scope.allowSpeechRecognition = (
+        $scope.uiConfig() &&
         $scope.uiConfig().speechRecognitionLanguage &&
         !!$window.webkitSpeechRecognition);
 
