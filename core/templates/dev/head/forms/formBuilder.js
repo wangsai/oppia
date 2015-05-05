@@ -1190,6 +1190,27 @@ oppia.directive('schemaBasedUnicodeEditor', [function() {
       $scope.allowedParameterNames = parameterSpecsService.getAllParamsOfType('unicode');
       $scope.doUnicodeParamsExist = ($scope.allowedParameterNames.length > 0);
 
+      // TODO(sll): this should be explicitly enabled, by taking in a parameter.
+      // The language to use should also be passed in.
+      $scope.allowSpeechRecognition = !!webkitSpeechRecognition;
+
+      $scope.startSpeechRecognition = function() {
+        var recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en';
+        recognition.start();
+        recognition.stop();
+
+        recognition.onresult = function(e) {
+          for (var i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              $scope.localValue = e.results[i][0].transcript;
+            }
+          }
+        }
+      };
+
       if ($scope.uiConfig() && $scope.uiConfig().rows && $scope.doUnicodeParamsExist) {
         $scope.doUnicodeParamsExist = false;
         console.log('Multi-row unicode fields with parameters are not currently supported.');
@@ -1400,10 +1421,10 @@ oppia.directive('schemaBasedListEditor', [
           $scope.isAddItemButtonPresent = false;
         };
 
-        
+
         $scope._onChildFormSubmit = function(evt) {
           if (!$scope.isAddItemButtonPresent) {
-            /** 
+            /**
              * If form submission happens on last element of the set (i.e the add item button is absent)
              * then automatically add the element to the list.
              */
@@ -1412,7 +1433,7 @@ oppia.directive('schemaBasedListEditor', [
               $scope.addElement();
             }
           } else {
-            /** 
+            /**
              * If form submission happens on existing element remove focus from it
              */
              document.activeElement.blur();

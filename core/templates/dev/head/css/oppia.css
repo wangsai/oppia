@@ -1892,3 +1892,12 @@ div#ng-curtain {
   resize: none;
   width: 245px;
 }
+
+/* This makes some space for the speech recognition button at the right of the
+   input field.
+*/
+md-input-group.long .oppia-unicode-editor-with-speech-recognition {
+  display: inline;
+  padding-top: 0;
+  width: 90%;
+}
