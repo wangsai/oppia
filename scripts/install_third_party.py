@@ -176,6 +176,9 @@ MATERIAL_DESIGN_ICONS_REV = '1.0.1'
 MATERIAL_DESIGN_ICONS_ACTION_URL = (
     'https://raw.githubusercontent.com/google/material-design-icons/%s/action/drawable-xxxhdpi'
     % MATERIAL_DESIGN_ICONS_REV)
+MATERIAL_DESIGN_ICONS_AV_URL = (
+    'https://raw.githubusercontent.com/google/material-design-icons/%s/av/drawable-xxxhdpi'
+    % MATERIAL_DESIGN_ICONS_REV)
 MATERIAL_DESIGN_ICONS_COMMUNICATION_URL = (
     'https://raw.githubusercontent.com/google/material-design-icons/%s/communication/drawable-xxxhdpi'
     % MATERIAL_DESIGN_ICONS_REV)
@@ -192,6 +195,7 @@ MATERIAL_DESIGN_ICONS_DST = os.path.join(
     THIRD_PARTY_STATIC_DIR,
     'material-design-icons-%s' % MATERIAL_DESIGN_ICONS_REV)
 MATERIAL_DESIGN_ICON_ACTION_FILES = ['ic_info_black_48dp.png', 'ic_help_black_48dp.png']
+MATERIAL_DESIGN_ICON_AV_FILES = ['ic_mic_none_black_48dp.png', 'ic_mic_black_48dp.png']
 MATERIAL_DESIGN_ICON_COMMUNICATION_FILES = ['ic_forum_black_48dp.png']
 MATERIAL_DESIGN_ICON_CONTENT_FILES = ['ic_link_black_48dp.png']
 MATERIAL_DESIGN_ICON_NAVIGATION_FILES = [
@@ -246,6 +250,9 @@ download_files(D3_URL, D3_DST, D3_FILES)
 download_files(
     MATERIAL_DESIGN_ICONS_ACTION_URL, MATERIAL_DESIGN_ICONS_DST,
     MATERIAL_DESIGN_ICON_ACTION_FILES)
+download_files(
+    MATERIAL_DESIGN_ICONS_AV_URL, MATERIAL_DESIGN_ICONS_DST,
+    MATERIAL_DESIGN_ICON_AV_FILES)
 download_files(
     MATERIAL_DESIGN_ICONS_COMMUNICATION_URL, MATERIAL_DESIGN_ICONS_DST,
     MATERIAL_DESIGN_ICON_COMMUNICATION_FILES)
