@@ -18,7 +18,6 @@
  */
 
 oppia.filter('oppiaInteractiveNumericInputValidator', ['$filter', 'WARNING_TYPES', function($filter, WARNING_TYPES) {
-  // Returns a list of warnings.
   return function(stateName, customizationArgs, ruleSpecs) {
     var warningsList = [];
 

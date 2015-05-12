@@ -123,6 +123,9 @@ class Real(BaseObject):
         'type': 'float'
     }
 
+class RealWithUnit(BaseObject):
+    """Real number class with unit."""
+    description = 'A real number with a unit.'
 
 class Int(BaseObject):
     """Integer class."""

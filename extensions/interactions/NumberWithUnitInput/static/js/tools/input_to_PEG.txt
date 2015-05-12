@@ -1,0 +1,105 @@
+start
+= expression
+
+expression = number:signedFloat units:listOfPoweredUnits
+  {
+     return {
+       number: number,
+       units: units
+  };
+}
+
+signedFloat =
+  "-" number:unsignedFloat
+    {
+      return (-1) * number;
+     }
+  / unsignedFloat
+
+unsignedFloat =
+  integral:unsignedInteger "." decimal:integerAsString
+    {
+      return integral + parseInt(decimal)/Math.pow(10, decimal.length);
+    }
+  / unsignedInteger
+  / "." decimal:integerAsString
+    {
+      return parseInt(decimal)/Math.pow(10, decimal.length);
+    }
+
+listOfPoweredUnits = poweredUnit+
+
+poweredUnit =
+  unit:unit "^" power:unsignedInteger
+    {
+      return {
+        unit: unit,
+        exponent: power
+      };
+    }
+  / unit:unit
+  {
+    return {
+      unit: unit,
+      exponent: 1
+    };
+  }
+
+unit =
+  "m"
+  / "mm"
+  / "cm"
+  / "km"
+  / "ft"
+  / "in"
+  / "inches"
+  / "inch"
+  / "mile"
+  / "miles"
+  / "g"
+  / "mg"
+  / "kg"
+  / "lb"
+  / "lbs"
+  / "qt"
+  / "qts"
+  / "hr"
+  / "year"
+  / "years"
+  / "joule"
+  / "joules"
+  / "J"
+  / "second"
+  / "seconds"
+  / "s"
+  / "N"
+  / "pascal"
+  / "Pa"
+  / "pa"
+  / "W"
+  / "watts"
+  / "watt"
+  / "C"
+  / "coulomb"
+  / "coulombs"
+  / "V"
+  / "volt"
+  / "volts"
+
+
+signedInteger =
+  "-" number:signedInteger
+    {
+      return (-1) * number;
+    }
+  / unsignedInteger
+
+unsignedInteger = self:integerAsString
+  {
+    return parseInt(self, 10);
+  }
+
+integerAsString = digits:[0-9]+
+  {
+    return digits.join("")
+  }

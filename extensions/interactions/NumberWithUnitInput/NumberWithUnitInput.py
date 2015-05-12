@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__author__ = 'Zoe Madden-Wood'
+
 from extensions.interactions import base
 
 
@@ -25,8 +27,8 @@ class NumberWithUnitInput(base.BaseInteraction):
     description = (
     'Allows learners to enter integers and floating point numbers followed by standard units.')
     display_mode = base.DISPLAY_MODE_INLINE
-    dependency_ids = []
+    dependency_ids = ['number_with_unit_input']
     _handlers = [{
     'name': 'submit', 'obj_type': 'RealWithUnit'}]
 
-    # _customization_arg_specs = [] # Not sure about this one yet.
+    _customization_arg_specs = []

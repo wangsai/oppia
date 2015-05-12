@@ -196,6 +196,9 @@ ALLOWED_INTERACTIONS = {
     'NumericInput': {
         'dir': os.path.join(INTERACTIONS_DIR, 'NumericInput')
     },
+    'NumberWithUnitInput': {
+        'dir': os.path.join(INTERACTIONS_DIR, 'NumberWithUnitInput')
+    },
     'SetInput': {
         'dir': os.path.join(INTERACTIONS_DIR, 'SetInput')
     },
