@@ -36,6 +36,17 @@ class Image(base.BaseRichTextComponent):
             'obj_type': 'Filepath',
         },
         'default_value': '',
+    }, {
+        # TODO(sll): Ensure that this corresponds to a valid parameter name.
+        # Ideally, make it a dropdown.
+        'name': 'show_parameter',
+        'description': (
+            'Optional parameter name: if non-empty, the image is only shown if '
+            'it evaluates to the string \'true\'.'),
+        'schema': {
+            'type': 'unicode',
+        },
+        'default_value': '',
     }]
 
     icon_data_url = (

@@ -20,17 +20,25 @@
  * followed by the name of the arg.
  */
 oppia.directive('oppiaNoninteractiveImage', [
-  '$rootScope', '$sce', 'oppiaHtmlEscaper', function($rootScope, $sce, oppiaHtmlEscaper) {
+  '$rootScope', '$sce', 'oppiaHtmlEscaper', 'learnerParamsService',
+  function($rootScope, $sce, oppiaHtmlEscaper, learnerParamsService) {
     return {
       restrict: 'E',
       scope: {},
       templateUrl: 'richTextComponent/Image',
       controller: ['$scope', '$attrs', function($scope, $attrs) {
         $scope.filepath = oppiaHtmlEscaper.escapedJsonToObj($attrs.filepathWithValue);
-        $scope.imageUrl = $sce.trustAsResourceUrl(
+        $scope.paramValue = oppiaHtmlEscaper.escapedJsonToObj($attrs.showParameterWithValue);
+
+        // TODO(sll): In the content editor preview, show a ghost version of the image.
+        $scope.showImage = !$scope.paramValue || (
+          learnerParamsService.getAllParams().hasOwnProperty($scope.paramValue) &&
+          learnerParamsService.getValue($scope.paramValue) === 'true');
+        if ($scope.showImage) {
+          $scope.imageUrl = $sce.trustAsResourceUrl(
             '/imagehandler/' + $rootScope.explorationId + '/' +
-            encodeURIComponent($scope.filepath)
-        );
+            encodeURIComponent($scope.filepath));
+        }
       }]
     };
   }
