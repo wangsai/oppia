@@ -247,7 +247,7 @@ class RuleSpec(object):
         #
         self.definition = definition
         # Id of the destination state.
-        # TODO(sll): Check that this state is END_DEST or actually exists.
+        # TODO(sll): Check that this state actually exists.
         self.dest = dest
         # Feedback to give the reader if this rule is triggered.
         self.feedback = feedback or []
@@ -1017,10 +1017,6 @@ class Exploration(object):
     def _require_valid_state_name(cls, name):
         cls._require_valid_name(name, 'a state name')
 
-        if name.lower() == feconf.END_DEST.lower():
-            raise utils.ValidationError(
-                'Invalid state name: %s' % feconf.END_DEST)
-
     def validate(self, strict=False, allow_null_interaction=False):
         """Validates the exploration before it is committed to storage.
 
@@ -1176,7 +1172,7 @@ class Exploration(object):
 
         # Check that all rule definitions, destinations and param changes are
         # valid.
-        all_state_names = self.states.keys() + [feconf.END_DEST]
+        all_state_names = self.states.keys()
         for state in self.states.values():
             for handler in state.interaction.handlers:
                 for rule_spec in handler.rule_specs:
@@ -1262,8 +1258,7 @@ class Exploration(object):
                     for rule in handler.rule_specs:
                         dest_state = rule.dest
                         if (dest_state not in curr_queue and
-                                dest_state not in processed_queue and
-                                dest_state != feconf.END_DEST):
+                                dest_state not in processed_queue):
                             curr_queue.append(dest_state)
 
         if len(self.states) != len(processed_queue):
@@ -1277,7 +1272,7 @@ class Exploration(object):
         """Verifies that all states can reach a terminal state."""
         # This queue stores state names.
         processed_queue = []
-        curr_queue = [feconf.END_DEST]
+        curr_queue = []
 
         for (state_name, state) in self.states.iteritems():
             if _is_interaction_terminal(state.interaction.id):
@@ -1290,8 +1285,7 @@ class Exploration(object):
             if curr_state_name in processed_queue:
                 continue
 
-            if curr_state_name != feconf.END_DEST:
-                processed_queue.append(curr_state_name)
+            processed_queue.append(curr_state_name)
 
             for (state_name, state) in self.states.iteritems():
                 if (state_name not in curr_queue

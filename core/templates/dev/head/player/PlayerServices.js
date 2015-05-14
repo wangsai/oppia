@@ -129,7 +129,6 @@ oppia.factory('oppiaPlayerService', [
       stopwatchProviderService, learnerParamsService, warningsData,
       oppiaHtmlEscaper, answerClassificationService, stateTransitionService,
       extensionTagAssemblerService, INTERACTION_SPECS) {
-  var _END_DEST = 'END';
   var _INTERACTION_DISPLAY_MODE_INLINE = 'inline';
   var _NULL_INTERACTION_HTML = (
     '<span style="color: red;"><strong>Error</strong>: No interaction specified.</span>');
@@ -245,7 +244,7 @@ oppia.factory('oppiaPlayerService', [
     _updateStatus(newParams, newStateName);
     stopwatch.resetStopwatch();
 
-    // NB: These may both be undefined if newStateName === END_DEST.
+    // NB: These shouldn't be undefined beacause newStateName cannot be END_DEST
     var newStateData = _exploration.states[newStateName];
     var newInteractionId = newStateData ? newStateData.interaction.id : undefined;
 
@@ -540,8 +539,6 @@ oppia.controller('LearnerLocalNav', [
     function(
       $scope, $http, $modal, oppiaHtmlEscaper,
       oppiaPlayerService, embedExplorationButtonService, ratingService) {
-  var _END_DEST = 'END';
-
   $scope.explorationId = oppiaPlayerService.getExplorationId();
   $scope.serverName = window.location.protocol + '//' + window.location.host;
   $scope.escapedTwitterText = oppiaHtmlEscaper.unescapedStrToEscapedStr(

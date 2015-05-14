@@ -866,7 +866,7 @@ oppia.factory('computeGraphService', ['INTERACTION_SPECS', function(INTERACTION_
   var _computeGraphData = function(initStateId, states) {
     var nodes = {};
     var links = [];
-    var finalStateIds = [END_DEST];
+    var finalStateIds = [];
     for (var stateName in states) {
       if (states[stateName].interaction.id &&
           INTERACTION_SPECS[states[stateName].interaction.id].is_terminal) {
@@ -888,7 +888,6 @@ oppia.factory('computeGraphService', ['INTERACTION_SPECS', function(INTERACTION_
         }
       }
     }
-    nodes[END_DEST] = END_DEST;
 
     return {
       nodes: nodes,
