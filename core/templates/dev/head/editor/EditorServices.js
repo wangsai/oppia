@@ -638,7 +638,7 @@ oppia.factory('explorationStatesService', [
       warningsData.clear();
 
       var initStateName = explorationInitStateNameService.displayed;
-      if (deleteStateName === initStateName || deleteStateName === END_DEST) {
+      if (deleteStateName === initStateName) {
         return;
       }
       if (!_states[deleteStateName]) {
