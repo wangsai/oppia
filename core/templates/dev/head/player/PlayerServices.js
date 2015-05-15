@@ -452,14 +452,13 @@ oppia.factory('oppiaPlayerService', [
           });
         }
 
-        var finished = (ruleSpec.dest === 'END');
-        var newStateName = finished ? null : ruleSpec.dest;
+        var newStateName = ruleSpec.dest;
 
         // Compute the data for the next state. This may be null if there are
         // malformed expressions.
         var nextStateData = stateTransitionService.getNextStateData(
           ruleSpec,
-          finished ? null : _exploration.states[newStateName],
+          _exploration.states[newStateName],
           answer);
 
         if (nextStateData) {
