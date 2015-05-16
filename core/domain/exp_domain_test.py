@@ -937,10 +937,22 @@ class StateOperationsUnitTests(test_utils.GenericTestBase):
         with self.assertRaisesRegexp(ValueError, 'Duplicate state name'):
             exploration.rename_state('State 2', 'Renamed state')
 
-        # And it is not OK to rename a state to the END_DEST.
-        with self.assertRaisesRegexp(
-                utils.ValidationError, 'Invalid state name'):
+        # And it is OK to rename a state to the END_DEST.
+        exploration.rename_state('State 2', feconf.END_DEST)
+
+        # Should successfully be able to name it back.
+        exploration.rename_state(feconf.END_DEST, 'State 2')
+
+        # Can successfully add END_DEST state
+        exploration.add_states([feconf.END_DEST])
+
+        # Should fail to rename like any other state
+        with self.assertRaisesRegexp(ValueError, 'Duplicate state name'):
             exploration.rename_state('State 2', feconf.END_DEST)
+
+        # Should be able to successfully delete it
+        exploration.delete_state(feconf.END_DEST)
+        self.assertNotIn(feconf.END_DEST, exploration.states)
 
         # The exploration now has exactly two states.
         self.assertNotIn(default_state_name, exploration.states)
