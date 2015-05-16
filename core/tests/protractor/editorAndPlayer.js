@@ -28,14 +28,15 @@ var player = require('../protractor_utils/player.js');
 var interactions = require('../../../extensions/interactions/protractor.js');
 
 describe('State editor', function() {
-  it('should display plain text content', function() {
+  iit('should display plain text content', function() {
     users.createUser('user1@example.com', 'user1');
     users.login('user1@example.com');
 
     workflow.createExploration('sums', 'maths');
     editor.setContent(forms.toRichText('plain text'));
     editor.setInteraction('Continue', 'click here');
-    editor.addRule('Continue', null, 'END', 'Default');
+    editor.addRule('Continue', null, { state_name: 'END',
+      create: true }, 'Default');
     editor.saveChanges();
 
     general.moveToPlayer();
