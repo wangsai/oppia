@@ -37,6 +37,7 @@ else:
 TESTS_DATA_DIR = os.path.join('core', 'tests', 'data')
 SAMPLE_EXPLORATIONS_DIR = os.path.join('data', 'explorations')
 INTERACTIONS_DIR = os.path.join('extensions', 'interactions')
+GADGETS_DIR = os.path.join('extensions', 'gadgets')
 RTE_EXTENSIONS_DIR = os.path.join('extensions', 'rich_text_components')
 RULES_DIR = os.path.join('extensions', 'rules')
 
@@ -75,6 +76,10 @@ DEFAULT_INIT_STATE_CONTENT_STR = ''
 # Name (and description) of the default rule.
 DEFAULT_RULE_NAME = 'Default'
 
+# Default valid parameter for instantiating Explorations when explicit
+# skin customizations aren't provided.
+DEFAULT_SKIN_CUSTOMIZATIONS = {'panels_contents': {}}
+
 # A dict containing the accepted image formats (as determined by the imghdr
 # module) and the corresponding allowed extensions in the filenames of uploaded
 # files.
@@ -87,6 +92,7 @@ ACCEPTED_IMAGE_FORMATS_AND_EXTENSIONS = {
 # Static file url to path mapping
 PATH_MAP = {
     '/css': os.path.join('core', 'templates', 'dev', 'head', 'css'),
+    '/extensions/gadgets': GADGETS_DIR,
     '/extensions/interactions': INTERACTIONS_DIR,
     '/extensions/rich_text_components': RTE_EXTENSIONS_DIR,
     '/favicon.ico': os.path.join('static', 'images', 'favicon.ico'),
@@ -107,8 +113,10 @@ for ind in range(32):
     INVALID_NAME_CHARS += chr(ind)
 # Prefix for data sent from the server to the client via JSON.
 XSSI_PREFIX = ')]}\'\n'
-# A regular expression for alphanumeric characters
+# A regular expression for alphanumeric characters.
 ALPHANUMERIC_REGEX = r'^[A-Za-z0-9]+$'
+# A regular expression for tags.
+TAG_REGEX = r'^[a-z ]+$'
 
 # Invalid names for parameters used in expressions.
 AUTOMATICALLY_SET_PARAMETER_NAMES = ['answer', 'choices']
@@ -165,45 +173,48 @@ ALLOWED_RTE_EXTENSIONS = {
         'dir': os.path.join(RTE_EXTENSIONS_DIR, 'Video')
     },
 }
-ALLOWED_INTERACTIONS = {
-    'CodeRepl': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'CodeRepl')
+
+# These categories and interactions are displayed in the order in which they
+# appear in the interaction selector.
+ALLOWED_INTERACTION_CATEGORIES = [{
+    'name': 'General',
+    'interaction_ids': [
+        'Continue',
+        'EndExploration',
+        'ImageClickInput',
+        'MultipleChoiceInput',
+        'TextInput'
+    ],
+}, {
+    'name': 'Math',
+    'interaction_ids': [
+        'GraphInput',
+        'LogicProof',
+        'NumericInput',
+        'NumberWithUnitInput',
+        'SetInput',
+    ]
+}, {
+    'name': 'Programming',
+    'interaction_ids': ['CodeRepl'],
+}, {
+    'name': 'Music',
+    'interaction_ids': [
+        'MusicNotesInput'
+    ],
+}, {
+    'name': 'Geography',
+    'interaction_ids': [
+        'InteractiveMap'
+    ],
+}]
+
+ALLOWED_GADGETS = {
+    'AdviceBar': {
+        'dir': os.path.join(GADGETS_DIR, 'AdviceBar')
     },
-    'Continue': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'Continue')
-    },
-    'EndExploration': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'EndExploration')
-    },
-    'GraphInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'GraphInput')
-    },
-    'ImageClickInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'ImageClickInput')
-    },
-    'InteractiveMap': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'InteractiveMap')
-    },
-    'LogicProof': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'LogicProof')
-    },
-    'MultipleChoiceInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'MultipleChoiceInput')
-    },
-    'MusicNotesInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'MusicNotesInput')
-    },
-    'NumericInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'NumericInput')
-    },
-    'NumberWithUnitInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'NumberWithUnitInput')
-    },
-    'SetInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'SetInput')
-    },
-    'TextInput': {
-        'dir': os.path.join(INTERACTIONS_DIR, 'TextInput')
+    'ScoreBar': {
+        'dir': os.path.join(GADGETS_DIR, 'ScoreBar')
     },
 }
 
@@ -234,6 +245,12 @@ DEMO_EXPLORATIONS = [
     ('protractor_test_1.yaml', 'Protractor Test', 'Mathematics'),
     ('solar_system', 'The Solar System', 'Physics'),
     ('about_oppia.yaml', 'About Oppia', 'Welcome'),
+    # TODO(anuzis): Replace about_oppia.yaml with this dev version when gadget
+    # visibility by state is functional. Currently an AdviceBar gadget that
+    # should only display on the Helsinki map state is visible during the
+    # entire exploration as a dev demo.
+    ('about_oppia_w_gadgets.yaml', 'Welcome with Gadgets! (DEV ONLY)',
+     'Welcome'),
 ]
 
 # TODO(sll): Add all other URLs here.
@@ -278,6 +295,8 @@ EVENT_TYPE_ANSWER_SUBMITTED = 'answer_submitted'
 EVENT_TYPE_DEFAULT_ANSWER_RESOLVED = 'default_answer_resolved'
 EVENT_TYPE_EXPLORATION_CHANGE = 'exploration_change'
 EVENT_TYPE_EXPLORATION_STATUS_CHANGE = 'exploration_status_change'
+EVENT_TYPE_NEW_THREAD_CREATED = 'feedback_thread_created'
+EVENT_TYPE_THREAD_STATUS_CHANGED = 'feedback_thread_status_changed'
 # The values for these two event types should be left as-is for backwards
 # compatibility.
 EVENT_TYPE_START_EXPLORATION = 'start'

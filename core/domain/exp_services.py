@@ -63,19 +63,20 @@ def get_exploration_from_model(exploration_model):
     return exp_domain.Exploration(
         exploration_model.id, exploration_model.title,
         exploration_model.category, exploration_model.objective,
-        exploration_model.language_code, exploration_model.skill_tags,
+        exploration_model.language_code, exploration_model.tags,
         exploration_model.blurb, exploration_model.author_notes,
-        exploration_model.default_skin, exploration_model.init_state_name,
-        exploration_model.states, exploration_model.param_specs,
-        exploration_model.param_changes, exploration_model.version,
-        exploration_model.created_on, exploration_model.last_updated)
+        exploration_model.default_skin, exploration_model.skin_customizations,
+        exploration_model.init_state_name, exploration_model.states,
+        exploration_model.param_specs, exploration_model.param_changes,
+        exploration_model.version, exploration_model.created_on,
+        exploration_model.last_updated)
 
 
 def get_exploration_summary_from_model(exp_summary_model):
     return exp_domain.ExplorationSummary(
         exp_summary_model.id, exp_summary_model.title,
         exp_summary_model.category, exp_summary_model.objective,
-        exp_summary_model.language_code, exp_summary_model.skill_tags,
+        exp_summary_model.language_code, exp_summary_model.tags,
         exp_summary_model.ratings, exp_summary_model.status,
         exp_summary_model.community_owned, exp_summary_model.owner_ids,
         exp_summary_model.editor_ids, exp_summary_model.viewer_ids,
@@ -240,12 +241,13 @@ def get_exploration_summaries_matching_query(query_string, cursor=None):
     """
     MAX_ITERATIONS = 10
     summary_models = []
+    search_cursor = cursor
 
     for i in range(MAX_ITERATIONS):
         remaining_to_fetch = feconf.GALLERY_PAGE_SIZE - len(summary_models)
 
         exp_ids, search_cursor = search_explorations(
-            query_string, remaining_to_fetch, cursor=cursor)
+            query_string, remaining_to_fetch, cursor=search_cursor)
 
         invalid_exp_ids = []
         for ind, model in enumerate(
@@ -399,8 +401,8 @@ def apply_change_list(exploration_id, change_list):
                     exploration.update_objective(change.new_value)
                 elif change.property_name == 'language_code':
                     exploration.update_language_code(change.new_value)
-                elif change.property_name == 'skill_tags':
-                    exploration.update_skill_tags(change.new_value)
+                elif change.property_name == 'tags':
+                    exploration.update_tags(change.new_value)
                 elif change.property_name == 'blurb':
                     exploration.update_blurb(change.new_value)
                 elif change.property_name == 'author_notes':
@@ -594,10 +596,12 @@ def _save_exploration(
     exploration_model.title = exploration.title
     exploration_model.objective = exploration.objective
     exploration_model.language_code = exploration.language_code
-    exploration_model.skill_tags = exploration.skill_tags
+    exploration_model.tags = exploration.tags
     exploration_model.blurb = exploration.blurb
     exploration_model.author_notes = exploration.author_notes
     exploration_model.default_skin = exploration.default_skin
+    exploration_model.skin_customizations = (
+        exploration.skin_instance.to_dict()['skin_customizations'])
 
     exploration_model.init_state_name = exploration.init_state_name
     exploration_model.states = {
@@ -632,10 +636,12 @@ def _create_exploration(
         title=exploration.title,
         objective=exploration.objective,
         language_code=exploration.language_code,
-        skill_tags=exploration.skill_tags,
+        tags=exploration.tags,
         blurb=exploration.blurb,
         author_notes=exploration.author_notes,
         default_skin=exploration.default_skin,
+        skin_customizations=exploration.skin_instance.to_dict(
+            )['skin_customizations'],
         init_state_name=exploration.init_state_name,
         states={
             state_name: state.to_dict()
@@ -817,7 +823,7 @@ def get_summary_of_exploration(exploration):
     exp_summary = exp_domain.ExplorationSummary(
         exploration.id, exploration.title, exploration.category,
         exploration.objective, exploration.language_code,
-        exploration.skill_tags, ratings, exp_rights.status,
+        exploration.tags, ratings, exp_rights.status,
         exp_rights.community_owned, exp_rights.owner_ids,
         exp_rights.editor_ids, exp_rights.viewer_ids, exploration.version,
         exploration_model_created_on, exploration_model_last_updated
@@ -836,7 +842,7 @@ def save_exploration_summary(exp_summary):
         category=exp_summary.category,
         objective=exp_summary.objective,
         language_code=exp_summary.language_code,
-        skill_tags=exp_summary.skill_tags,
+        tags=exp_summary.tags,
         ratings = exp_summary.ratings,
         status=exp_summary.status,
         community_owned=exp_summary.community_owned,
@@ -1056,18 +1062,35 @@ def _get_search_rank(exp_id):
     """Returns an integer determining the document's rank in search.
 
     Featured explorations get a ranking bump, and so do explorations that
-    have been more recently updated.
+    have been more recently updated. Good ratings will increase the ranking
+    and bad ones will lower it.
     """
     # TODO(sll): Improve this calculation.
+    _STATUS_PUBLICIZED_BONUS = 30
+
     exploration = get_exploration_by_id(exp_id)
     rights = rights_manager.get_exploration_rights(exp_id)
+    summary = get_exploration_summary_by_id(exp_id)
     rank = (
-        3000 if rights.status == rights_manager.EXPLORATION_STATUS_PUBLICIZED
+        _STATUS_PUBLICIZED_BONUS
+        if rights.status == rights_manager.EXPLORATION_STATUS_PUBLICIZED
         else 0)
 
+    if summary.ratings:
+        RATING_WEIGHTINGS = {'1': -5, '2': -2, '3': 2, '4': 5, '5': 10}
+        for rating_value in summary.ratings:
+            rank += (
+                summary.ratings[rating_value] *
+                RATING_WEIGHTINGS[rating_value])
+
     _BEGINNING_OF_TIME = datetime.datetime(2013, 6, 30)
-    time_delta_days = (exploration.last_updated - _BEGINNING_OF_TIME).days
-    rank += int(time_delta_days)
+    time_delta_days = int((exploration.last_updated - _BEGINNING_OF_TIME).days)
+    if time_delta_days == 0:
+        rank += 80
+    elif time_delta_days == 1:
+        rank += 50
+    elif 2 <= time_delta_days <= 7:
+        rank += 35
 
     return rank
 
@@ -1079,7 +1102,7 @@ def _exp_to_search_dict(exp):
         'language_code': exp.language_code,
         'title': exp.title,
         'category': exp.category,
-        'skills': exp.skill_tags,
+        'tags': exp.tags,
         'blurb': exp.blurb,
         'objective': exp.objective,
         'author_notes': exp.author_notes,
@@ -1139,7 +1162,7 @@ def search_explorations(query, limit, sort=None, cursor=None):
           '-' character indicating whether to sort in ascending or descending
           order respectively. This character should be followed by a field name
           to sort on. When this is None, results are based on 'rank'. See
-          _exp_to_search_dict to see how rank is determined.
+          _get_search_rank to see how rank is determined.
       - limit: the maximum number of results to return.
       - cursor: A cursor, used to get the next page of results.
           If there are more documents that match the query than 'limit', this

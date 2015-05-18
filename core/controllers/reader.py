@@ -17,8 +17,10 @@
 __author__ = 'Sean Lip'
 
 import copy
+import logging
 
 from core.controllers import base
+from core.controllers import pages
 from core.domain import config_domain
 from core.domain import dependency_registry
 from core.domain import event_services
@@ -26,6 +28,7 @@ from core.domain import exp_domain
 from core.domain import exp_services
 from core.domain import feedback_services
 from core.domain import fs_domain
+from core.domain import gadget_registry
 from core.domain import interaction_registry
 from core.domain import param_domain
 from core.domain import rating_services
@@ -38,6 +41,43 @@ import jinja_utils
 import utils
 
 import jinja2
+
+
+SHARING_OPTIONS = config_domain.ConfigProperty(
+    'sharing_options', {
+        'type': 'dict',
+        'properties': [{
+            'name': 'gplus',
+            'schema': {
+                'type': 'bool',
+            }
+        }, {
+            'name': 'facebook',
+            'schema': {
+                'type': 'bool',
+            }
+        }, {
+            'name': 'twitter',
+            'schema': {
+                'type': 'bool',
+            }
+        }]
+    },
+    'Sharing options to display in the learner view',
+    default_value={
+        'gplus': False,
+        'facebook': False,
+        'twitter': False,
+    })
+
+SHARING_OPTIONS_TWITTER_TEXT = config_domain.ConfigProperty(
+    'sharing_options_twitter_text', {
+        'type': 'unicode',
+    },
+    'Default text for the Twitter share message',
+    default_value=(
+        'Check out this interactive lesson from Oppia - a free, open-source '
+        'learning platform!'))
 
 
 def require_playable(handler):
@@ -102,6 +142,16 @@ class ExplorationPage(base.BaseHandler):
 
     PAGE_NAME_FOR_CSRF = 'player'
 
+    def _make_first_letter_uppercase(self, s):
+        """Converts the first letter of a string to its uppercase equivalent,
+        and returns the result.
+        """
+        # This guards against empty strings.
+        if s:
+            return s[0].upper() + s[1:]
+        else:
+            return s
+
     @require_playable
     def get(self, exploration_id):
         """Handles GET requests."""
@@ -126,6 +176,7 @@ class ExplorationPage(base.BaseHandler):
         is_iframed = (self.request.get('iframed') == 'true')
 
         # TODO(sll): Cache these computations.
+        gadget_ids = exploration.get_gadget_ids()
         interaction_ids = exploration.get_interaction_ids()
         dependency_ids = (
             interaction_registry.Registry.get_deduplicated_dependency_ids(
@@ -134,13 +185,19 @@ class ExplorationPage(base.BaseHandler):
             dependency_registry.Registry.get_deps_html_and_angular_modules(
                 dependency_ids))
 
+        gadget_templates = (
+            gadget_registry.Registry.get_gadget_html(gadget_ids))
+
         interaction_templates = (
             rte_component_registry.Registry.get_html_for_all_components() +
             interaction_registry.Registry.get_interaction_html(
                 interaction_ids))
 
         self.values.update({
+            'GADGET_SPECS': gadget_registry.Registry.get_all_specs(),
             'INTERACTION_SPECS': interaction_registry.Registry.get_all_specs(),
+            'SHARING_OPTIONS': SHARING_OPTIONS.value,
+            'SHARING_OPTIONS_TWITTER_TEXT': SHARING_OPTIONS_TWITTER_TEXT.value,
             'additional_angular_modules': additional_angular_modules,
             'can_edit': (
                 bool(self.username) and
@@ -151,11 +208,17 @@ class ExplorationPage(base.BaseHandler):
                 dependencies_html),
             'exploration_title': exploration.title,
             'exploration_version': version,
+            'gadget_templates': jinja2.utils.Markup(gadget_templates),
             'iframed': is_iframed,
             'interaction_templates': jinja2.utils.Markup(
                 interaction_templates),
             'is_private': rights_manager.is_exploration_private(
                 exploration_id),
+            # Note that this overwrites the value in base.py.
+            'meta_name': exploration.title,
+            # Note that this overwrites the value in base.py.
+            'meta_description': self._make_first_letter_uppercase(
+                exploration.objective),
             'nav_mode': feconf.NAV_MODE_EXPLORE,
             'skin_templates': jinja2.utils.Markup(
                 skins_services.Registry.get_skin_templates(
@@ -165,7 +228,6 @@ class ExplorationPage(base.BaseHandler):
             'skin_tag': jinja2.utils.Markup(
                 skins_services.Registry.get_skin_tag(exploration.default_skin)
             ),
-            'title': exploration.title,
         })
 
         if is_iframed:
@@ -263,15 +325,13 @@ class StateHitEventHandler(base.BaseHandler):
             'client_time_spent_in_secs')
         old_params = self.payload.get('old_params')
 
-        if new_state_name == feconf.END_DEST:
-            event_services.MaybeLeaveExplorationEventHandler.record(
-                exploration_id, exploration_version, feconf.END_DEST,
-                session_id, client_time_spent_in_secs, old_params,
-                feconf.PLAY_TYPE_NORMAL)
-        else:
+        # Record the state hit, if it is not the END state.
+        if new_state_name is not None:
             event_services.StateHitEventHandler.record(
                 exploration_id, exploration_version, new_state_name,
                 session_id, old_params, feconf.PLAY_TYPE_NORMAL)
+        else:
+            logging.error('Unexpected StateHit event for the END state.')
 
 
 class ClassifyHandler(base.BaseHandler):
@@ -345,7 +405,10 @@ class ExplorationStartEventHandler(base.BaseHandler):
 
 
 class ExplorationMaybeLeaveHandler(base.BaseHandler):
-    """Tracks a reader leaving an exploration before completion."""
+    """Tracks a reader leaving an exploration before or at completion.
+
+    If this is a completion, the state_name recorded should be 'END'.
+    """
 
     REQUIRE_PAYLOAD_CSRF_CHECK = False
 
@@ -411,7 +474,11 @@ def submit_answer_in_tests(
 
 
 class RatingHandler(base.BaseHandler):
-    """Records the rating of an exploration submitted by a user."""
+    """Records the rating of an exploration submitted by a user.
+
+    Note that this represents ratings submitted on completion of the
+    exploration.
+    """
 
     PAGE_NAME_FOR_CSRF = 'player'
 
@@ -419,16 +486,20 @@ class RatingHandler(base.BaseHandler):
     def get(self, exploration_id):
         """Handles GET requests."""
         self.values.update({
-            'overall': rating_services.get_overall_ratings(exploration_id),
-            'user': rating_services.get_user_specific_rating(
+            'overall_ratings':
+                rating_services.get_overall_ratings(exploration_id),
+            'user_rating': rating_services.get_user_specific_rating(
                 self.user_id, exploration_id) if self.user_id else None
         })
         self.render_json(self.values)
 
     @base.require_user
     def put(self, exploration_id):
-        """Handles PUT requests."""
+        """Handles PUT requests for submitting ratings at the end of an
+        exploration.
+        """
+        user_rating = self.payload.get('user_rating')
         rating_services.assign_rating(
-            self.user_id, exploration_id, self.payload.get('rating'))
+            self.user_id, exploration_id, user_rating)
         self.render_json({})
 

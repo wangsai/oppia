@@ -27,6 +27,7 @@ from core.domain import exp_domain
 from core.domain import exp_services
 from core.domain import fs_domain
 from core.domain import param_domain
+from core.domain import rating_services
 from core.domain import rights_manager
 from core.domain import rule_domain
 from core.domain import user_services
@@ -367,8 +368,9 @@ language_code: en
 objective: The objective
 param_changes: []
 param_specs: {}
-schema_version: 4
-skill_tags: []
+schema_version: 5
+skin_customizations:
+  panels_contents: {}
 states:
   %s:
     content:
@@ -410,6 +412,7 @@ states:
           param_changes: []
       id: TextInput
     param_changes: []
+tags: []
 """ % (
     feconf.DEFAULT_INIT_STATE_NAME, feconf.DEFAULT_INIT_STATE_NAME,
     feconf.DEFAULT_INIT_STATE_NAME))
@@ -423,8 +426,9 @@ language_code: en
 objective: The objective
 param_changes: []
 param_specs: {}
-schema_version: 4
-skill_tags: []
+schema_version: 5
+skin_customizations:
+  panels_contents: {}
 states:
   %s:
     content:
@@ -466,6 +470,7 @@ states:
           param_changes: []
       id: TextInput
     param_changes: []
+tags: []
 """ % (
     feconf.DEFAULT_INIT_STATE_NAME, feconf.DEFAULT_INIT_STATE_NAME,
     feconf.DEFAULT_INIT_STATE_NAME))
@@ -1694,6 +1699,21 @@ class SearchTests(ExplorationServicesUnitTests):
         self.assertEqual(cursor, expected_result_cursor)
         self.assertEqual(result, doc_ids)
 
+    def test_get_search_rank(self):
+        self.save_new_valid_exploration(self.EXP_ID, self.OWNER_ID)
+
+        self.assertEqual(exp_services._get_search_rank(self.EXP_ID), 0)
+
+        rights_manager.publish_exploration(self.OWNER_ID, self.EXP_ID)
+        rights_manager.publicize_exploration(self.user_id_admin, self.EXP_ID)
+        self.assertEqual(exp_services._get_search_rank(self.EXP_ID), 30)
+
+        rating_services.assign_rating(self.OWNER_ID, self.EXP_ID, 5)
+        self.assertEqual(exp_services._get_search_rank(self.EXP_ID), 40)
+
+        rating_services.assign_rating(self.user_id_admin, self.EXP_ID, 2)
+        self.assertEqual(exp_services._get_search_rank(self.EXP_ID), 38)
+
 
 class ExplorationChangedEventsTests(ExplorationServicesUnitTests):
 
@@ -1866,7 +1886,7 @@ class ExplorationSummaryGetTests(ExplorationServicesUnitTests):
         self.assertEqual(actual_summaries.keys(),
                          expected_summaries.keys())
         simple_props = ['id', 'title', 'category', 'objective',
-                        'language_code', 'skill_tags', 'ratings', 'status',
+                        'language_code', 'tags', 'ratings', 'status',
                         'community_owned', 'owner_ids',
                         'editor_ids', 'viewer_ids', 'version',
                         'exploration_model_created_on',
@@ -1904,7 +1924,7 @@ class ExplorationSummaryGetTests(ExplorationServicesUnitTests):
         self.assertEqual(actual_summaries.keys(),
                          expected_summaries.keys())
         simple_props = ['id', 'title', 'category', 'objective',
-                        'language_code', 'skill_tags', 'ratings', 'status',
+                        'language_code', 'tags', 'ratings', 'status',
                         'community_owned', 'owner_ids',
                         'editor_ids', 'viewer_ids', 'version',
                         'exploration_model_created_on',
@@ -1935,7 +1955,7 @@ class ExplorationSummaryGetTests(ExplorationServicesUnitTests):
         self.assertEqual(actual_summaries.keys(),
                          expected_summaries.keys())
         simple_props = ['id', 'title', 'category', 'objective',
-                        'language_code', 'skill_tags', 'ratings', 'status',
+                        'language_code', 'tags', 'ratings', 'status',
                         'community_owned', 'owner_ids',
                         'editor_ids', 'viewer_ids', 'version',
                         'exploration_model_created_on',
@@ -1978,7 +1998,7 @@ class ExplorationSummaryGetTests(ExplorationServicesUnitTests):
         self.assertEqual(actual_summaries.keys(),
                          expected_summaries.keys())
         simple_props = ['id', 'title', 'category', 'objective',
-                        'language_code', 'skill_tags', 'ratings','status',
+                        'language_code', 'tags', 'ratings','status',
                         'community_owned', 'owner_ids',
                         'editor_ids', 'viewer_ids', 'version',
                         'exploration_model_created_on',

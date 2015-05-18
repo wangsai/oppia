@@ -3,6 +3,7 @@ module.exports = function(config) {
     basePath: '../../',
     frameworks: ['jasmine'],
     files: [
+      'core/tests/karma-globals.js',
       'third_party/static/jquery-2.1.1/jquery.min.js',
       'third_party/static/jqueryui-1.10.3/jquery-ui.min.js',
       'third_party/static/angularjs-1.3.13/angular.js',
@@ -21,13 +22,19 @@ module.exports = function(config) {
       'third_party/static/ng-joyride-0.1.11/ng-joyride.js',
       'third_party/static/nginfinitescroll-1.0.0/ng-infinite-scroll.min.js',
       'third_party/static/ng-img-crop-0.3.2/compile/minified/ng-img-crop.js',
+      'third_party/static/textAngular-1.3.7/src/textAngular.js',
+      'third_party/static/textAngular-1.3.7/src/textAngularSetup.js',
+      // 'third_party/static/textAngular-1.3.7/src/textAngular-sanitize.js',
+      'third_party/static/textAngular-1.3.7/dist/textAngular-rangy.min.js',
       'core/templates/dev/head/*.js',
       // Note that unexpected errors occur ("Cannot read property 'num' of
       // undefined" in MusicNotesInput.js) if the order of core/templates/...
       // and extensions/... are switched. The test framework may be flaky.
       'core/templates/dev/head/**/*.js',
+      'core/templates/dev/head/components/ratings.html',
       'extensions/**/*.js',
-      'extensions/interactions/**/*.html'
+      'extensions/interactions/**/*.html',
+      'extensions/skins/**/*.html'
     ],
     exclude: [
       'core/templates/dev/head/**/*-e2e.js',
@@ -61,8 +68,12 @@ module.exports = function(config) {
       'core/templates/dev/head/services/!(*Spec).js': ['coverage'],
       'core/templates/dev/head/tests/!(*Spec).js': ['coverage'],
       'extensions/**/!(*Spec).js': ['coverage'],
-      'core/templates/dev/head/**/*.html': ['ng-html2js'],
-      'extensions/interactions/**/*.html': ['ng-html2js']
+      // Note that these files should contain only directive templates, and no
+      // Jinja expressions. They should also be specified within the 'files'
+      // list above.
+      'core/templates/dev/head/components/ratings.html': ['ng-html2js'],
+      'extensions/interactions/**/*.html': ['ng-html2js'],
+      'extensions/skins/**/*.html': ['ng-html2js']
     },
     reporters: ['progress', 'coverage'],
     coverageReporter: {

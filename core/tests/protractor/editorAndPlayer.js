@@ -48,15 +48,31 @@ describe('State editor', function() {
     users.logout();
   });
 
+  it('should walk through the tutorial when user repeteadly clicks Next', function() {
+    var NUM_TUTORIAL_STAGES = 5;
+    users.createUser('user@example.com', 'user');
+    users.login('user@example.com');
+
+    workflow.createExplorationAndStartTutorial('sums', 'maths');
+    for (var i = 0; i < NUM_TUTORIAL_STAGES - 1; i++) {
+      editor.progressInTutorial();
+    }
+    editor.finishTutorial();
+    users.logout();
+  });
+
   it('should create content and multiple choice interactions', function() {
     users.createUser('user2@example.com', 'user2');
     users.login('user2@example.com');
 
     workflow.createExploration('sums', 'maths');
     editor.setContent(function(richTextEditor) {
-      richTextEditor.appendBoldText('bold text ');
-      richTextEditor.appendItalicText('italic text ');
+      richTextEditor.appendBoldText('bold text');
+      richTextEditor.appendPlainText(' ');
+      richTextEditor.appendItalicText('italic text');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.appendUnderlineText('underline text');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.appendOrderedList(['entry 1', 'entry 2']);
       richTextEditor.appendUnorderedList(['an entry', 'another entry']);
     });
@@ -160,8 +176,11 @@ describe('Full exploration editor', function() {
       editor.setInteraction('TextInput');
       editor.addRule('TextInput', null, 'END', 'Default');
       editor.RuleEditor('default').createNewStateAndSetDestination('state2');
-      editor.expectStateNamesToBe(['state1', 'state2', 'END']);
       editor.moveToState('state2');
+      // NOTE: we must move to the state before checking state names to avoid
+      // inexplicable failures of the protractor utility that reads state names
+      // (the user-visible names are fine either way). See issue 732 for more.
+      editor.expectStateNamesToBe(['state1', 'state2', 'END']);
       editor.setInteraction('EndExploration');
 
       editor.discardChanges();
@@ -246,15 +265,13 @@ describe('rich-text components', function() {
     workflow.createExploration('RTE components', 'maths');
 
     editor.setContent(function(richTextEditor) {
-      richTextEditor.appendPlainText('plainly');
       richTextEditor.appendBoldText('bold');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.addRteComponent(
         'Collapsible', 'title', forms.toRichText('inner'));
       // TODO (Jacob) add test for image RTE component
       richTextEditor.addRteComponent('Link', 'http://google.com/', true);
       richTextEditor.addRteComponent('Math', 'abc');
-      richTextEditor.appendUnderlineText('underlined');
-      richTextEditor.appendPlainText('extra');
       richTextEditor.addRteComponent('Tabs', [{
         title: 'title 1',
         content: forms.toRichText('contents 1')
@@ -269,14 +286,12 @@ describe('rich-text components', function() {
 
     general.moveToPlayer();
     player.expectContentToMatch(function(richTextChecker) {
-      richTextChecker.readPlainText('plainly');
       richTextChecker.readBoldText('bold');
+      richTextChecker.readPlainText(' ');
       richTextChecker.readRteComponent(
         'Collapsible', 'title', forms.toRichText('inner'));
       richTextChecker.readRteComponent('Link', 'http://google.com/', true);
       richTextChecker.readRteComponent('Math', 'abc');
-      richTextChecker.readUnderlineText('underlined');
-      richTextChecker.readPlainText('extra');
       richTextChecker.readRteComponent('Tabs', [{
         title: 'title 1',
         content: forms.toRichText('contents 1')
@@ -286,6 +301,7 @@ describe('rich-text components', function() {
       }]);
       richTextChecker.readRteComponent('Video', 'ANeHmk22a6Q', 10, 100, false);
     });
+
 
     users.logout();
   });
@@ -298,42 +314,26 @@ describe('rich-text components', function() {
 
     editor.setContent(function(richTextEditor) {
       richTextEditor.appendItalicText('slanted');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.addRteComponent(
           'Collapsible', 'heading', function(collapsibleEditor) {
-        // TODO (Jacob) add sub-components when issue 423 is fixed
-        collapsibleEditor.addRteComponent('Tabs', [{
-          title: 'no1',
-          content: function(tab1Editor) {
-            tab1Editor.setPlainText('boring');
-          }
-        }, {
-          title: 'no2',
-          content: function(tab2Editor) {
-            tab2Editor.appendBoldText('fun!');
-          }
-        }]);
+        collapsibleEditor.appendBoldText('boldtext');
+        collapsibleEditor.appendPlainText(' ');
         collapsibleEditor.addRteComponent('Math', 'xyz');
       });
     });
-    editor.setInteraction('TextInput');
+
+    editor.setInteraction('EndExploration');
     editor.saveChanges();
 
     general.moveToPlayer();
     player.expectContentToMatch(function(richTextChecker) {
       richTextChecker.readItalicText('slanted');
+      richTextChecker.readPlainText(' ');
       richTextChecker.readRteComponent(
           'Collapsible', 'heading', function(collapsibleChecker) {
-        collapsibleChecker.readRteComponent('Tabs', [{
-          title: 'no1',
-          content: function(tab1Checker) {
-            tab1Checker.readPlainText('boring');
-          }
-        }, {
-          title: 'no2',
-          content: function(tab2Checker) {
-            tab2Checker.readBoldText('fun!');
-          }
-        }]);
+        collapsibleChecker.readBoldText('boldtext');
+        collapsibleChecker.readPlainText(' ');
         collapsibleChecker.readRteComponent('Math', 'xyz');
       });
     });
@@ -368,31 +368,31 @@ describe('Interactions', function() {
 
     var defaultRuleSet = false;
 
-    for (var interactionName in interactions.INTERACTIONS) {
-      var interaction = interactions.INTERACTIONS[interactionName];
+    for (var interactionId in interactions.INTERACTIONS) {
+      var interaction = interactions.INTERACTIONS[interactionId];
       for (var i = 0; i < interaction.testSuite.length; i++) {
         var test = interaction.testSuite[i];
         editor.setInteraction.apply(
-          null, [interactionName].concat(test.interactionArguments));
+          null, [interactionId].concat(test.interactionArguments));
         editor.addRule.apply(
-          null, [interactionName, null, 'END'].concat(test.ruleArguments));
+          null, [interactionId, null, 'END'].concat(test.ruleArguments));
         editor.RuleEditor(0).setFeedback(0, forms.toRichText('yes'));
         if (!defaultRuleSet) {
           // The default rule will be preserved for subsequent tests.
           editor.addRule(
-            interactionName, forms.toRichText('no'), null, 'Default');
+            interactionId, forms.toRichText('no'), null, 'Default');
           defaultRuleSet = true;
         }
 
         editor.navigateToPreviewTab();
         player.expectInteractionToMatch.apply(
-          null, [interactionName].concat(test.expectedInteractionDetails));
+          null, [interactionId].concat(test.expectedInteractionDetails));
         for (var j = 0; j < test.wrongAnswers.length; j++) {
-          player.submitAnswer(interactionName, test.wrongAnswers[j]);
+          player.submitAnswer(interactionId, test.wrongAnswers[j]);
           player.expectLatestFeedbackToMatch(forms.toRichText('no'));
         }
         for (var j = 0; j < test.correctAnswers.length; j++) {
-          player.submitAnswer(interactionName, test.correctAnswers[j]);
+          player.submitAnswer(interactionId, test.correctAnswers[j]);
           player.expectLatestFeedbackToMatch(forms.toRichText('yes'));
         }
         editor.navigateToMainTab();
@@ -444,7 +444,7 @@ describe('Exploration history', function() {
     var VERSION_1_STATE_1_CONTENTS = {
       1: {text: 'content:', highlighted: false},
       2: {text: '- type: text', highlighted: false},
-      3: {text: '  value: enter 6 to continue', highlighted: true},
+      3: {text: '  value: <p>enter 6 to continue</p>', highlighted: true},
       4: {text: 'interaction:', highlighted: false},
       5: {text: '  customization_args: {}', highlighted: false},
       6: {text: '  handlers:', highlighted: false},
@@ -491,7 +491,7 @@ describe('Exploration history', function() {
     var STATE_2_STRING =
       'content:\n' +
       '- type: text\n' +
-      '  value: this is state 2\n' +
+      '  value: <p>this is state 2</p>\n' +
       'interaction:\n' +
       '  customization_args:\n' +
       '    buttonText:\n' +

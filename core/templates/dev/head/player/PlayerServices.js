@@ -19,6 +19,7 @@
  */
 
 // The conditioning on window.GLOBALS is because Karma does not appear to see GLOBALS.
+oppia.constant('GADGET_SPECS', window.GLOBALS ? GLOBALS.GADGET_SPECS : {});
 oppia.constant('INTERACTION_SPECS', window.GLOBALS ? GLOBALS.INTERACTION_SPECS : {});
 
 // A simple service that provides stopwatch instances. Each stopwatch can be
@@ -122,12 +123,12 @@ oppia.factory('oppiaPlayerService', [
     '$http', '$rootScope', '$modal', '$filter', '$q', 'messengerService',
     'stopwatchProviderService', 'learnerParamsService', 'warningsData',
     'oppiaHtmlEscaper', 'answerClassificationService', 'stateTransitionService',
-    'INTERACTION_SPECS',
+    'extensionTagAssemblerService', 'INTERACTION_SPECS',
     function(
       $http, $rootScope, $modal, $filter, $q, messengerService,
       stopwatchProviderService, learnerParamsService, warningsData,
       oppiaHtmlEscaper, answerClassificationService, stateTransitionService,
-      INTERACTION_SPECS) {
+      extensionTagAssemblerService, INTERACTION_SPECS) {
   var _END_DEST = 'END';
   var _INTERACTION_DISPLAY_MODE_INLINE = 'inline';
   var _NULL_INTERACTION_HTML = (
@@ -188,13 +189,8 @@ oppia.factory('oppiaPlayerService', [
     var el = $(
       '<oppia-interactive-' + $filter('camelCaseToHyphens')(interactionId) + '>');
 
-    for (var caSpecName in interactionCustomizationArgSpecs) {
-      var caSpecValue = interactionCustomizationArgSpecs[caSpecName].value;
-      // TODO(sll): Evaluate any values here that correspond to expressions.
-      el.attr(
-        $filter('camelCaseToHyphens')(caSpecName) + '-with-value',
-        oppiaHtmlEscaper.objToEscapedJson(caSpecValue));
-    }
+    el = extensionTagAssemblerService.formatCustomizationArgAttributesForElement(
+      el, interactionCustomizationArgSpecs);
 
     if (labelForFocusTarget) {
       el.attr('label-for-focus-target', labelForFocusTarget);
@@ -219,13 +215,24 @@ oppia.factory('oppiaPlayerService', [
     if (!_editorPreviewMode) {
       // Record the state hit to the event handler.
       var stateHitEventHandlerUrl = '/explorehandler/state_hit_event/' + _explorationId;
-      $http.post(stateHitEventHandlerUrl, {
-        new_state_name: newStateName,
-        exploration_version: version,
-        session_id: sessionId,
-        client_time_spent_in_secs: stopwatch.getTimeInSecs(),
-        old_params: learnerParamsService.getAllParams()
-      });
+
+      if (newStateName) {
+        $http.post(stateHitEventHandlerUrl, {
+          new_state_name: newStateName,
+          exploration_version: version,
+          session_id: sessionId,
+          client_time_spent_in_secs: stopwatch.getTimeInSecs(),
+          old_params: learnerParamsService.getAllParams()
+        });
+      }
+
+      // If the new state is either the END state, or contains a terminal
+      // interaction, record a MaybeLeave event.
+      if (!newStateName ||
+          INTERACTION_SPECS[
+            _exploration.states[newStateName].interaction.id].is_terminal) {
+        _registerMaybeLeaveEvent('END');
+      }
 
       // Broadcast the state hit to the parent page.
       messengerService.sendMessage(messengerService.STATE_TRANSITION, {
@@ -238,13 +245,8 @@ oppia.factory('oppiaPlayerService', [
     _updateStatus(newParams, newStateName);
     stopwatch.resetStopwatch();
 
-    // NB: This may be undefined if newStateName === END_DEST.
+    // NB: These may both be undefined if newStateName === END_DEST.
     var newStateData = _exploration.states[newStateName];
-    if (newStateData) {
-      learnerParamsService.init(newParams);
-    }
-
-    // NB: This may be undefined if newStateName === END_DEST.
     var newInteractionId = newStateData ? newStateData.interaction.id : undefined;
 
     $rootScope.$broadcast('playerStateChange');
@@ -252,6 +254,18 @@ oppia.factory('oppiaPlayerService', [
     successCallback(
       newStateName, refreshInteraction, newFeedbackHtml,
       newQuestionHtml, newInteractionId);
+  };
+
+  var _registerMaybeLeaveEvent = function(stateName) {
+    var maybeLeaveExplorationUrl = (
+      '/explorehandler/exploration_maybe_leave_event/' + _explorationId);
+    $http.post(maybeLeaveExplorationUrl, {
+      client_time_spent_in_secs: stopwatch.getTimeInSecs(),
+      params: learnerParamsService.getAllParams(),
+      session_id: sessionId,
+      state_name: stateName,
+      version: version
+    });
   };
 
   var _onInitialStateProcessed = function(initStateName, initHtml, newParams, callback) {
@@ -342,6 +356,7 @@ oppia.factory('oppiaPlayerService', [
           sessionId = data.session_id;
           _viewerHasEditingRights = data.can_edit;
           _loadInitialState(successCallback);
+          $rootScope.$broadcast('playerServiceInitialized');
         }).error(function(data) {
           warningsData.addWarning(
             data.error || 'There was an error loading the exploration.');
@@ -362,6 +377,9 @@ oppia.factory('oppiaPlayerService', [
         _exploration.states[stateName].interaction.id,
         _exploration.states[stateName].interaction.customization_args,
         labelForFocusTarget);
+    },
+    getGadgetPanelsContents: function() {
+      return angular.copy(_exploration.skin_customizations.panels_contents);
     },
     isInteractionInline: function(stateName) {
       var interactionId = _exploration.states[stateName].interaction.id;
@@ -438,19 +456,19 @@ oppia.factory('oppiaPlayerService', [
         var finished = (ruleSpec.dest === 'END');
         var newStateName = finished ? null : ruleSpec.dest;
 
-        // Compute the client evaluation result. This may be null if there are
+        // Compute the data for the next state. This may be null if there are
         // malformed expressions.
-        var clientEvalResult = stateTransitionService.getNextStateData(
+        var nextStateData = stateTransitionService.getNextStateData(
           ruleSpec,
           finished ? null : _exploration.states[newStateName],
           answer);
 
-        if (clientEvalResult) {
-          clientEvalResult['state_name'] = newStateName;
+        if (nextStateData) {
+          nextStateData['state_name'] = newStateName;
           answerIsBeingProcessed = false;
           _onStateTransitionProcessed(
-            clientEvalResult.state_name, clientEvalResult.params,
-            clientEvalResult.question_html, clientEvalResult.feedback_html,
+            nextStateData.state_name, nextStateData.params,
+            nextStateData.question_html, nextStateData.feedback_html,
             answer, handler, successCallback);
         } else {
           answerIsBeingProcessed = false;
@@ -462,69 +480,7 @@ oppia.factory('oppiaPlayerService', [
       return answerIsBeingProcessed;
     },
     registerMaybeLeaveEvent: function() {
-      var maybeLeaveExplorationUrl = (
-        '/explorehandler/exploration_maybe_leave_event/' + _explorationId);
-      $http.post(maybeLeaveExplorationUrl, {
-        client_time_spent_in_secs: stopwatch.getTimeInSecs(),
-        params: learnerParamsService.getAllParams(),
-        session_id: sessionId,
-        state_name: stateHistory[stateHistory.length - 1],
-        version: version
-      });
-    },
-    // If the feedback is exploration-scoped, 'stateName' should be null.
-    openPlayerFeedbackModal: function(stateName) {
-      var modalConfig = {
-        templateUrl: 'modals/playerFeedback',
-        backdrop: true,
-        resolve: {
-          stateName: function() {
-            return stateName;
-          }
-        },
-        controller: ['$scope', '$modalInstance', 'oppiaPlayerService', 'stateName', function(
-            $scope, $modalInstance, oppiaPlayerService, stateName) {
-          $scope.isLoggedIn = oppiaPlayerService.isLoggedIn();
-
-          $scope.isSubmitterAnonymized = false;
-          $scope.stateName = stateName;
-          $scope.subject = '';
-          $scope.feedback = '';
-
-          $scope.submit = function(subject, feedback, isSubmitterAnonymized) {
-            $modalInstance.close({
-              subject: subject,
-              feedback: feedback,
-              isSubmitterAnonymized: isSubmitterAnonymized
-            });
-          };
-
-          $scope.cancel = function() {
-            $modalInstance.dismiss('cancel');
-          };
-        }]
-      };
-
-      $modal.open(modalConfig).result.then(function(result) {
-        if (result.feedback) {
-          $http.post('/explorehandler/give_feedback/' + _explorationId, {
-            subject: result.subject,
-            feedback: result.feedback,
-            include_author: !result.isSubmitterAnonymized && _isLoggedIn,
-            state_name: stateName
-          });
-
-          $modal.open({
-            templateUrl: 'modals/playerFeedbackConfirmation',
-            backdrop: true,
-            controller: ['$scope', '$modalInstance', function($scope, $modalInstance) {
-              $scope.cancel = function() {
-                $modalInstance.dismiss('cancel');
-              };
-            }]
-          });
-        }
-      });
+      _registerMaybeLeaveEvent(stateHistory[stateHistory.length - 1]);
     },
     // Returns a promise for the user profile picture, or the default image if
     // user is not logged in or has not uploaded a profile picture, or the
@@ -550,19 +506,168 @@ oppia.factory('oppiaPlayerService', [
 }]);
 
 
+oppia.factory('ratingService', [
+    '$http', '$rootScope', 'oppiaPlayerService',
+    function($http, $rootScope, oppiaPlayerService) {
+  var explorationId = oppiaPlayerService.getExplorationId();
+  var ratingsUrl = '/explorehandler/rating/' + explorationId;
+  var userRating;
+  return {
+    init: function(successCallback) {
+      $http.get(ratingsUrl).success(function(data) {
+        successCallback(data.user_rating);
+        userRating = data.user_rating;
+        $rootScope.$broadcast('ratingServiceInitialized');
+      });
+    },
+    submitUserRating: function(ratingValue) {
+      $http.put(ratingsUrl, {
+        user_rating: ratingValue
+      });
+      userRating = ratingValue;
+      $rootScope.$broadcast('ratingUpdated');
+    },
+    getUserRating: function() {
+      return userRating;
+    }
+  };
+}]);
+
+
 oppia.controller('LearnerLocalNav', [
-    '$scope', '$http', '$modal',
-    'oppiaPlayerService', 'embedExplorationButtonService',
+    '$scope', '$http', '$modal', 'oppiaHtmlEscaper',
+    'oppiaPlayerService', 'embedExplorationButtonService', 'ratingService',
     function(
-      $scope, $http, $modal,
-      oppiaPlayerService, embedExplorationButtonService) {
+      $scope, $http, $modal, oppiaHtmlEscaper,
+      oppiaPlayerService, embedExplorationButtonService, ratingService) {
   var _END_DEST = 'END';
 
   $scope.explorationId = oppiaPlayerService.getExplorationId();
   $scope.serverName = window.location.protocol + '//' + window.location.host;
+  $scope.escapedTwitterText = oppiaHtmlEscaper.unescapedStrToEscapedStr(
+    GLOBALS.SHARING_OPTIONS_TWITTER_TEXT);
+
+  $scope.$on('playerServiceInitialized', function() {
+    $scope.isLoggedIn = oppiaPlayerService.isLoggedIn();
+  });
+  $scope.$on('ratingServiceInitialized', function() {
+    $scope.userRating = ratingService.getUserRating();
+  });
+
   $scope.showEmbedExplorationModal = embedExplorationButtonService.showModal;
 
-  $scope.showFeedbackModal = function() {
-    oppiaPlayerService.openPlayerFeedbackModal(null);
+  $scope.submitUserRating = function(ratingValue) {
+    $scope.userRating = ratingValue;
+    ratingService.submitUserRating(ratingValue);
+  };
+  $scope.$on('ratingUpdated', function() {
+    $scope.userRating = ratingService.getUserRating();
+  });
+}]);
+
+
+// This directive is unusual in that it should only be invoked indirectly, as
+// follows:
+//
+// <some-html-element popover-placement="bottom" popover-template="popover/feedback"
+//                    popover-trigger="click" state-name="<[STATE_NAME]>">
+// </some-html-element>
+//
+// The state-name argument is optional. If it is not provided, the feedback is
+// assumed to apply to the exploration as a whole.
+oppia.directive('feedbackPopup', ['oppiaPlayerService', function(oppiaPlayerService) {
+  return {
+    restrict: 'E',
+    scope: {},
+    templateUrl: 'components/feedback',
+    controller: [
+        '$scope', '$element', '$http', '$timeout', 'focusService', 'warningsData',
+        function($scope, $element, $http, $timeout, focusService, warningsData) {
+      $scope.feedbackText = '';
+      $scope.isSubmitterAnonymized = false;
+      $scope.isLoggedIn = oppiaPlayerService.isLoggedIn();
+      $scope.feedbackSubmitted = false;
+      // We generate a random id since there may be multiple popover elements
+      // on the same page.
+      $scope.feedbackPopoverId = (
+        'feedbackPopover' + Math.random().toString(36).slice(2));
+
+      focusService.setFocus($scope.feedbackPopoverId);
+
+      var feedbackUrl = (
+        '/explorehandler/give_feedback/' + oppiaPlayerService.getExplorationId());
+
+      var getTriggerElt = function() {
+        // Find the popover trigger node (the one with a popover-template
+        // attribute). This is also the DOM node that contains the state name.
+        // Since the popover DOM node is inserted as a sibling to the node, we
+        // therefore climb up the DOM tree until we find the top-level popover
+        // element. The trigger will be one of its siblings.
+        //
+        // If the trigger element cannot be found, a value of undefined is
+        // returned. This could happen if the trigger is clicked while the
+        // feedback confirmation message is being displayed.
+        var elt = $element;
+        var popoverChildElt = null;
+        for (var i = 0; i < 10; i++) {
+          elt = elt.parent();
+          if (elt.attr('template')) {
+            popoverChildElt = elt;
+            break;
+          }
+        }
+        if (!popoverChildElt) {
+          console.log('Could not close popover element.');
+          return undefined;
+        }
+
+        var popoverElt = popoverChildElt.parent();
+        var triggerElt = null;
+        var childElts = popoverElt.children();
+        for (var i = 0; i < childElts.length; i++) {
+          var childElt = $(childElts[i]);
+          if (childElt.attr('popover-template')) {
+            triggerElt = childElt;
+            break;
+          }
+        }
+
+        if (!triggerElt) {
+          console.log('Could not find popover trigger.');
+          return undefined;
+        }
+
+        return triggerElt;
+      };
+
+      $scope.saveFeedback = function() {
+        if ($scope.feedbackText) {
+          $http.post(feedbackUrl, {
+            subject: '(Feedback from a learner)',
+            feedback: $scope.feedbackText,
+            include_author: !$scope.isSubmitterAnonymized && $scope.isLoggedIn,
+            state_name: getTriggerElt().attr('state-name')
+          });
+        }
+
+        $scope.feedbackSubmitted = true;
+        $timeout(function() {
+          var triggerElt = getTriggerElt();
+          if (triggerElt) {
+            triggerElt.trigger('click');
+          }
+        }, 2000);
+      };
+
+      $scope.closePopover = function() {
+        // Closing the popover is done by clicking on the popover trigger.
+        // The timeout is needed to postpone the click event to
+        // the subsequent digest cycle. Otherwise, an "$apply already
+        // in progress" error is raised.
+        $timeout(function() {
+          getTriggerElt().trigger('click');
+        });
+      };
+    }]
   };
 }]);

@@ -30,20 +30,21 @@ oppia.controller('ExplorationEditor', [
   'explorationData', 'editorContextService', 'explorationTitleService',
   'explorationCategoryService', 'explorationObjectiveService',
   'explorationLanguageCodeService', 'explorationRightsService',
-  'explorationInitStateNameService', 'editabilityService',
+  'explorationInitStateNameService', 'explorationTagsService', 'editabilityService',
   'explorationStatesService', 'routerService',
   'graphDataService', 'stateEditorTutorialFirstTimeService',
-  'explorationParamSpecsService', 'explorationWarningsService',
-  '$templateCache',
+  'explorationParamSpecsService', 'explorationParamChangesService',
+  'explorationWarningsService', '$templateCache',
   function(
     $scope, $http, $window, $rootScope, $log, $timeout,
     explorationData,  editorContextService, explorationTitleService,
     explorationCategoryService, explorationObjectiveService,
     explorationLanguageCodeService, explorationRightsService,
-    explorationInitStateNameService, editabilityService,
+    explorationInitStateNameService, explorationTagsService, editabilityService,
     explorationStatesService, routerService,
     graphDataService,  stateEditorTutorialFirstTimeService,
-    explorationParamSpecsService, explorationWarningsService, $templateCache) {
+    explorationParamSpecsService, explorationParamChangesService,
+    explorationWarningsService, $templateCache) {
 
   $scope.editabilityService = editabilityService;
   $scope.editorContextService = editorContextService;
@@ -96,7 +97,9 @@ oppia.controller('ExplorationEditor', [
       explorationObjectiveService.init(data.objective);
       explorationLanguageCodeService.init(data.language_code);
       explorationInitStateNameService.init(data.init_state_name);
+      explorationTagsService.init(data.tags);
       explorationParamSpecsService.init(data.param_specs);
+      explorationParamChangesService.init(data.param_changes || []);
 
       $scope.explorationTitleService = explorationTitleService;
       $scope.explorationCategoryService = explorationCategoryService;
@@ -158,7 +161,6 @@ oppia.controller('ExplorationEditor', [
 
   var _ID_TUTORIAL_STATE_CONTENT = '#tutorialStateContent';
   var _ID_TUTORIAL_STATE_INTERACTION = '#tutorialStateInteraction';
-  var _ID_TUTORIAL_STATE_ACTIVE_RULE = '#tutorialStateActiveRule';
   var _ID_TUTORIAL_PREVIEW_TAB = "#tutorialPreviewTab";
   var _ID_TUTORIAL_SAVE_BUTTON = "#tutorialSaveButton";
 
@@ -398,8 +400,11 @@ oppia.controller('ExplorationSaveAndPublishButtons', [
   $scope.isExplorationSaveable = function() {
     return (
       $scope.isExplorationLockedForEditing() &&
-      !$scope.isSaveInProgress &&
-      !explorationWarningsService.hasCriticalWarnings());
+      !$scope.isSaveInProgress && (
+        ($scope.isPrivate() && !explorationWarningsService.hasCriticalWarnings()) ||
+        (!$scope.isPrivate() && explorationWarningsService.countWarnings() === 0)
+      )
+    );
   };
 
   $window.addEventListener('beforeunload', function(e) {
@@ -512,23 +517,23 @@ oppia.controller('ExplorationSaveAndPublishButtons', [
           deletedStates: function() {
             return deletedStates;
           },
-          commitMessageIsOptional: function() {
+          isExplorationPrivate: function() {
             return explorationRightsService.isPrivate();
           }
         },
         controller: [
           '$scope', '$modalInstance', 'explorationPropertyChanges',
           'statePropertyChanges', 'changedStates', 'addedStates',
-          'deletedStates', 'commitMessageIsOptional',
+          'deletedStates', 'isExplorationPrivate',
           function($scope, $modalInstance, explorationPropertyChanges,
                    statePropertyChanges, changedStates, addedStates,
-                   deletedStates, commitMessageIsOptional) {
+                   deletedStates, isExplorationPrivate) {
             $scope.explorationPropertyChanges = explorationPropertyChanges;
             $scope.statePropertyChanges = statePropertyChanges;
             $scope.changedStates = changedStates;
             $scope.addedStates = addedStates;
             $scope.deletedStates = deletedStates;
-            $scope.commitMessageIsOptional = commitMessageIsOptional;
+            $scope.isExplorationPrivate = isExplorationPrivate;
 
             // For reasons of backwards compatibility, the following keys
             // should not be changed.
@@ -539,6 +544,7 @@ oppia.controller('ExplorationSaveAndPublishButtons', [
               'category': 'Category',
               'objective': 'Objective',
               'language_code': 'Language',
+              'tags': 'Tags',
               'param_specs': 'Parameter specifications',
               'param_changes': 'Initial parameter changes',
               'default_skin_id': 'Default skin',
@@ -563,7 +569,7 @@ oppia.controller('ExplorationSaveAndPublishButtons', [
               'content': 'Content',
               'widget_id': 'Interaction type',
               'widget_customization_args': 'Interaction customizations',
-              'widget_handlers': 'Reader submission rules'
+              'widget_handlers': 'Rules'
             }
 
             // An ordered list of state properties that determines the order in which
