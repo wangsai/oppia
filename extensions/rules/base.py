@@ -56,6 +56,10 @@ class CheckedProofRule(rule_domain.Rule):
     subject_type = objects.CheckedProof
 
 
+class RealWithUnitRule(rule_domain.Rule):
+    subject_type = objects.RealWithUnit
+
+
 class GraphRule(rule_domain.Rule):
     subject_type = objects.Graph
 

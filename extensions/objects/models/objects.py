@@ -123,10 +123,6 @@ class Real(BaseObject):
         'type': 'float'
     }
 
-class RealWithUnit(BaseObject):
-    """Real number class with unit."""
-    description = 'A real number with a unit.'
-
 class Int(BaseObject):
     """Integer class."""
 
@@ -175,6 +171,50 @@ class NonnegativeInt(BaseObject):
         'validators': [{
             'id': 'is_at_least',
             'min_value': 0
+        }]
+    }
+
+class RealWithUnit(BaseObject):
+    """Real number class with unit."""
+    description = 'A real number with a unit.'
+    edit_html_filename = 'real_with_unit_editor'
+    edit_js_filename = 'RealWithUnitEditor'
+
+    SCHEMA = {
+        'type': 'dict',
+        'properties': [{
+            'name': 'raw',
+            'schema': UnicodeString.SCHEMA,
+        }, {
+            'name': 'parsed',
+            'schema': {
+                'type': 'dict',
+                'properties': [
+                    {
+                        'name': 'number',
+                        'schema': Real.SCHEMA,
+                    },
+                    {
+                        'name': 'units',
+                        'schema': {
+                            'type': 'list',
+                            'items': {
+                                'type': 'dict',
+                                'properties': [
+                                    {
+                                        'name': 'unit',
+                                        'schema': UnicodeString.SCHEMA,
+                                    },
+                                    {
+                                        'name': 'exponent',
+                                        'schema': Int.SCHEMA,
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
         }]
     }
 

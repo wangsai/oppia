@@ -55,7 +55,7 @@ describe('numberWithUnitInput', function() {
       expect(ctrlScope.postprocess(answer, parsedAnswer)).toEqual({
         'raw': answer,
         'parsed': parsedAnswer
-      })
+      });
     });
   });
 });
