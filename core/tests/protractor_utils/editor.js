@@ -340,10 +340,10 @@ var addRule = function(interactionId, feedbackInstructions, dest,
   }
 
   // chceck whether to create destination state
-  if (create && dest) {
-    _createStateAsDestination(ruleElement, dest.state_name);
-  } else if (dest) { // createDest automatically sets it, too
-    _setRuleDest(ruleElement, dest);
+  if (create && stateName) {
+    _createStateAsDestination(ruleElement, stateName);
+  } else if (stateName) { // createDest automatically sets it, too
+    _setRuleDest(ruleElement, stateName);
   }
 
   element(by.css('.protractor-test-add-new-rule')).click();
