@@ -1171,9 +1171,7 @@ oppia.factory('explorationWarningsService', [
     var allParamNames = [];
     var explorationParamMetadata = _getMetadataFromParamChanges(
       explorationParamChangesService.savedMemento);
-    var stateParamMetadatas = {
-      'END': []
-    };
+    var stateParamMetadatas = {};
 
     explorationParamMetadata.forEach(function(explorationParamMetadataItem) {
       if (allParamNames.indexOf(explorationParamMetadataItem.paramName) === -1) {
@@ -1289,12 +1287,6 @@ oppia.factory('explorationWarningsService', [
     if (_graphData) {
       var unreachableStateNames = _getUnreachableNodeNames(
         [_graphData.initStateId], _graphData.nodes, _graphData.links);
-
-      // We do not care if the END state is unreachable.
-      var endIndex = unreachableStateNames.indexOf('END');
-      if (endIndex !== -1) {
-        unreachableStateNames.splice(endIndex, 1);
-      }
 
       if (unreachableStateNames.length) {
         _warningsList.push({

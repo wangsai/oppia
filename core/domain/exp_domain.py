@@ -1555,12 +1555,12 @@ class Exploration(object):
             state_name for state_name in exploration_dict['states']
             if state_name != init_state_name])
 
-        targetsEndState = False
-        hasEndState = False
+        targets_end_state = False
+        has_end_state = False
         for (state_name, sdict) in exploration_dict['states'].iteritems():
             state = exploration.states[state_name]
-            if not hasEndState and state_name == feconf.END_DEST:
-                hasEndState = True
+            if not has_end_state and state_name == feconf.END_DEST:
+                has_end_state = True
 
             state.content = [
                 Content(item['type'], html_cleaner.clean(item['value']))
@@ -1591,11 +1591,11 @@ class Exploration(object):
                 }, InteractionInstance._get_obj_type(idict['id']))
                 for handler in idict['handlers']]
 
-            if not targetsEndState:
+            if not targets_end_state:
                 for handler in sdict['interaction']['handlers']:
                     for rule_spec in handler['rule_specs']:
                         if rule_spec['dest'] == feconf.END_DEST:
-                            targetsEndState = True
+                            targets_end_state = True
                             break
 
             state.interaction = InteractionInstance(
@@ -1615,7 +1615,7 @@ class Exploration(object):
 
         # ensure any explorations pointing to an END state has a valid END
         # state to end with (in case it expects an END state)
-        if targetsEndState and not hasEndState:
+        if targets_end_state and not has_end_state:
             exploration.add_states([ feconf.END_DEST ])
             exploration.states[feconf.END_DEST].update_interaction_id(
                 'EndExploration')
