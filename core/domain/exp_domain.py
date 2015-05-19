@@ -907,8 +907,8 @@ class Exploration(object):
 
     def __init__(self, exploration_id, title, category, objective,
                  language_code, tags, blurb, author_notes, default_skin,
-                 skin_customizations, init_state_name, states_dict,
-                 param_specs_dict, param_changes_list, version,
+                 skin_customizations, states_schema_version, init_state_name,
+                 states_dict, param_specs_dict, param_changes_list, version,
                  created_on=None, last_updated=None):
         self.id = exploration_id
         self.title = title
@@ -919,6 +919,7 @@ class Exploration(object):
         self.blurb = blurb
         self.author_notes = author_notes
         self.default_skin = default_skin
+        self.states_schema_version = states_schema_version
         self.init_state_name = init_state_name
 
         self.skin_instance = SkinInstance(default_skin, skin_customizations)
@@ -943,7 +944,7 @@ class Exploration(object):
         simple_props = [
             'id', 'title', 'category', 'objective', 'language_code',
             'tags', 'blurb', 'author_notes', 'default_skin',
-            'init_state_name', 'version']
+            'states_schema_version', 'init_state_name', 'version']
 
         for prop in simple_props:
             if getattr(self, prop) != getattr(other, prop):
@@ -982,6 +983,7 @@ class Exploration(object):
         return cls(
             exploration_id, title, category, objective, language_code, [], '',
             '', 'conversation_v1', feconf.DEFAULT_SKIN_CUSTOMIZATIONS,
+            feconf.CURRENT_EXPLORATION_STATES_SCHEMA_VERSION,
             feconf.DEFAULT_INIT_STATE_NAME, states_dict, {}, [], 0)
 
     @classmethod
@@ -1111,6 +1113,9 @@ class Exploration(object):
             self.states[state_name].validate(
                 allow_null_interaction=allow_null_interaction)
 
+        if not self.states_schema_version:
+            raise utils.ValidationError(
+                'This exploration has no states schema version.')
         if not self.init_state_name:
             raise utils.ValidationError(
                 'This exploration has no initial state name specified.')
@@ -1440,7 +1445,7 @@ class Exploration(object):
 
         del self.states[state_name]
 
-    # The current version of the exploration schema. If any backward-
+    # The current version of the exploration YAML schema. If any backward-
     # incompatible changes are made to the exploration schema in the YAML
     # definitions, this version number must be changed and a migration process
     # put in place.
@@ -1615,6 +1620,7 @@ class Exploration(object):
             'author_notes': self.author_notes,
             'blurb': self.blurb,
             'default_skin': self.default_skin,
+            'states_schema_version': self.states_schema_version,
             'init_state_name': self.init_state_name,
             'language_code': self.language_code,
             'objective': self.objective,

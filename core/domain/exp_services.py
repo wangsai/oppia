@@ -49,6 +49,44 @@ CMD_CREATE_NEW = 'create_new'
 #Name for the exploration search index
 SEARCH_INDEX_EXPLORATIONS = 'explorations'
 
+# Convert old states schema to the modern v1 schema. v1 contains the schema
+# version 1 and does not contain any old constructs, such as widgets. This is
+# a complete migration of everything previous to the schema versioning update
+# to the earliest versioned schema.
+def _convert_states_v0_dict_to_v1_dict(exploration_dict):
+    return exploration_dict
+
+# Holds the responsibility of performing a step-by-step, sequential update of
+# an exploration states structure based on the schema version of the input
+# exploration dictionary. This is very similar to the YAML conversion process
+# found in exp_domain.py and, in fact, many of the conversion functions for
+# states are also used in the YAML conversion pipeline. If the current
+# exploration states schema version changes above, a new conversion function
+# must be added and some code appended to this function to account for that new
+# version.
+def _migrate_states_schema(exploration_dict):
+    exploration_states_schema_version = exploration_dict.states_schema_version
+    if (exploration_states_schema_version is None
+            or exploration_states_schema_version < 1):
+        exploration_dict = _convert_states_v0_dict_to_v1_dict(exploration_dict)
+        exploration_states_schema_version = 1
+    if not (0 < exploration_states_schema_version
+            <= feconf.CURRENT_EXPLORATION_STATES_SCHEMA_VERSION):
+        raise Exception(
+            'Sorry, we can only process v1 and unversioned exploration state '
+            'schemas at present.')
+    if exploration_states_schema_version == 0:
+        exploration_dict = _convert_states_v0_dict_to_v1_dict(exploration_dict)
+        exploration_states_schema_version = 1
+
+    # finished pipelining the exploration; if the exploration has been upgraded,
+    # save previous states schema version (useful to the exp migration job)
+    if (exploration_dict.states_schema_version !=
+            exploration_states_schema_version):
+        exploration_dict.prev_states_schema_version = \
+            exploration_dict.states_schema_version
+    exploration_dict.states_schema_version = exploration_states_schema_version
+    return exploration_dict
 
 # Repository GET methods.
 def _get_exploration_memcache_key(exploration_id, version=None):
@@ -60,16 +98,18 @@ def _get_exploration_memcache_key(exploration_id, version=None):
 
 
 def get_exploration_from_model(exploration_model):
-    return exp_domain.Exploration(
+    return _migrate_states_schema(exp_domain.Exploration(
         exploration_model.id, exploration_model.title,
         exploration_model.category, exploration_model.objective,
         exploration_model.language_code, exploration_model.tags,
         exploration_model.blurb, exploration_model.author_notes,
         exploration_model.default_skin, exploration_model.skin_customizations,
+        exploration_model.states_schema_version,
         exploration_model.init_state_name, exploration_model.states,
         exploration_model.param_specs, exploration_model.param_changes,
         exploration_model.version, exploration_model.created_on,
-        exploration_model.last_updated)
+        exploration_model.last_updated
+    ))
 
 
 def get_exploration_summary_from_model(exp_summary_model):
@@ -603,6 +643,7 @@ def _save_exploration(
     exploration_model.skin_customizations = (
         exploration.skin_instance.to_dict()['skin_customizations'])
 
+    exploration_model.states_schema_version = exploration.states_schema_version
     exploration_model.init_state_name = exploration.init_state_name
     exploration_model.states = {
         state_name: state.to_dict()
@@ -789,6 +830,12 @@ def update_exploration(
 
     # update summary of changed exploration
     update_exploration_summary(exploration.id)
+
+def save_exploration(committer_id, exploration, commit_message):
+    """Save an exploration given a committer and message. This does not apply a
+    sequence of changes. For that, use update_exploration.
+    """
+    _save_exploration(committer_id, exploration, commit_message, None)
 
 
 def create_exploration_summary(exploration_id):
