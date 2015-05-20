@@ -69,7 +69,6 @@ var createAndPublishExploration = function(name, category, objective, language) 
 
   // need to setup proper END state (with EndInteraction)
   editor.moveToState('END');
-  editor.setContent(forms.toRichText('Congratulations, you have finished!'));
   editor.setInteraction('EndExploration');
   editor.saveChanges();
 

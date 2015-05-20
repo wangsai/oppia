@@ -18,6 +18,8 @@
  * @author sll@google.com (Sean Lip)
  */
 
+var DEFAULT_END_STATE_CONTENT = 'Congratulations, you have finished!';
+
 // A state-specific cache for interaction details. It stores customization args
 // corresponding to an interaction id so that they can be restored if the
 // interaction is changed back while the user is still in this state. This
@@ -48,14 +50,16 @@ oppia.factory('interactionDetailsCache', [function() {
 
 oppia.controller('StateInteraction', [
     '$scope', '$http', '$rootScope', '$modal', '$filter', 'warningsData',
-    'editorContextService', 'oppiaHtmlEscaper', 'INTERACTION_SPECS',
-    'stateInteractionIdService', 'stateCustomizationArgsService',
-    'editabilityService', 'explorationStatesService', 'graphDataService',
+    'editorContextService', 'changeListService', 'oppiaHtmlEscaper',
+    'INTERACTION_SPECS', 'stateInteractionIdService',
+    'stateCustomizationArgsService', 'editabilityService',
+    'explorationStatesService', 'graphDataService',
     'interactionDetailsCache',
     function($scope, $http, $rootScope, $modal, $filter, warningsData,
-      editorContextService, oppiaHtmlEscaper, INTERACTION_SPECS,
-      stateInteractionIdService, stateCustomizationArgsService,
-      editabilityService, explorationStatesService, graphDataService,
+      editorContextService, changeListService, oppiaHtmlEscaper,
+      INTERACTION_SPECS, stateInteractionIdService,
+      stateCustomizationArgsService, editabilityService,
+      explorationStatesService, graphDataService,
       interactionDetailsCache) {
 
   // Declare dummy submitAnswer() and adjustPageHeight() methods for the
@@ -120,6 +124,39 @@ oppia.controller('StateInteraction', [
     _updateInteractionPreviewAndAnswerChoices();
     $scope.hasLoaded = true;
   });
+
+  $scope.updateEndExplorationDefaultContent = function(newInteraction) {
+    // get current state
+    var activeStateName = editorContextService.getActiveStateName();
+    var state = explorationStatesService.getState(activeStateName);
+
+    // in order to automatically update the state content, it needs to have no
+    // content upon adding an EndExploration OR have the default-added content
+    // upon deleting/changing an EndExploration
+    var expectedContent = newInteraction ? '' : DEFAULT_END_STATE_CONTENT;
+    var newContent = newInteraction ? DEFAULT_END_STATE_CONTENT : '';
+    var hasCurrentExpectedContent= state.content.length == 1
+        && state.content[0].value == expectedContent
+        && state.content[0].type == 'text';
+
+    if (!hasCurrentExpectedContent) {
+      return; // interaction is not as expected; don't automate anything
+    }
+
+    // update the state's content
+    var previousContent = angular.copy(state.content);
+    state.content = [{ type: 'text', value: newContent }];
+
+    // save property change for the state's content
+    changeListService.editStateProperty(activeStateName, 'content',
+      angular.copy(state.content), previousContent);
+
+    // save state
+    explorationStatesService.setState(activeStateName, state);
+
+    // refresh some related elements so the updated state appears
+    $rootScope.$broadcast('refreshStateEditor');
+  };
 
   $scope.openInteractionCustomizerModal = function() {
     if (editabilityService.isEditable()) {
@@ -217,6 +254,17 @@ oppia.controller('StateInteraction', [
         var hasInteractionIdChanged = (
           selectedInteractionId !== stateInteractionIdService.savedMemento);
         if (hasInteractionIdChanged) {
+          // if the user selects the EndExploration and has not filled in any
+          // content for their state, default it to the congrats message
+          var currentInterId = stateInteractionIdService.savedMemento;
+          if (selectedInteractionId == 'EndExploration') {
+            // new/changed interaction
+            $scope.updateEndExplorationDefaultContent(true);
+          } else if (currentInterId == 'EndExploration') {
+            // no longer end exp
+            $scope.updateEndExplorationDefaultContent(false);
+          }
+
           stateInteractionIdService.displayed = selectedInteractionId;
           stateInteractionIdService.saveDisplayedValue();
         }
@@ -249,6 +297,12 @@ oppia.controller('StateInteraction', [
   $scope.deleteInteraction = function() {
     if (!window.confirm('Are you sure you want to delete this interaction? This will also clear all its rules.')) {
       return false;
+    }
+
+    // check if it's an EndExploration; if so, the state's defaulted content may
+    // need to be cleared
+    if (stateInteractionIdService.savedMemento == 'EndExploration') {
+      $scope.updateEndExplorationDefaultContent(false); // no longer end exp
     }
 
     stateInteractionIdService.displayed = null;

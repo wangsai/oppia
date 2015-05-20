@@ -40,7 +40,6 @@ describe('State editor', function() {
 
     // need to setup proper END state (with EndInteraction)
     editor.moveToState('END');
-    editor.setContent(forms.toRichText('Congratulations, you have finished!'));
     editor.setInteraction('EndExploration');
     editor.saveChanges();
 
@@ -90,7 +89,6 @@ describe('State editor', function() {
 
     // need to setup proper END state (with EndInteraction)
     editor.moveToState('END');
-    editor.setContent(forms.toRichText('Congratulations, you have finished!'));
     editor.setInteraction('EndExploration');
     editor.saveChanges();
 
@@ -120,7 +118,6 @@ describe('State editor', function() {
 
     // need to setup proper END state (with EndInteraction)
     editor.moveToState('END');
-    editor.setContent(forms.toRichText('Congratulations, you have finished!'));
     editor.setInteraction('EndExploration');
     editor.saveChanges();
 
@@ -162,7 +159,6 @@ describe('Full exploration editor', function() {
 
     // need to setup proper END state (with EndInteraction)
     editor.moveToState('END');
-    editor.setContent(forms.toRichText('Congratulations, you have finished!'));
     editor.setInteraction('EndExploration');
     editor.saveChanges();
 
@@ -263,7 +259,6 @@ describe('Full exploration editor', function() {
 
       // need to setup proper END state (with EndInteraction)
       editor.moveToState('END');
-      editor.setContent(forms.toRichText('Congratulations, you have finished!'));
       editor.setInteraction('EndExploration');
 
       // Check editor preview tab
@@ -418,8 +413,6 @@ describe('Interactions', function() {
 
           // setup proper END state (with EndInteraction)
           editor.moveToState('END');
-          editor.setContent(forms.toRichText(
-            'Congratulations, you have finished!'));
           editor.setInteraction('EndExploration');
           editor.moveToState("first"); // move back to continue
 
@@ -494,7 +487,6 @@ describe('Exploration history', function() {
 
     // need to setup proper END state (with EndInteraction)
     editor.moveToState('END');
-    editor.setContent(forms.toRichText('Congratulations, you have finished!'));
     editor.setInteraction('EndExploration');
     editor.moveToState('first');
     editor.saveChanges();
