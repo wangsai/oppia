@@ -166,31 +166,33 @@ oppia.controller('Admin', ['$scope', '$http', function($scope, $http) {
       return;
     }
 
-    var numSucceeded = 0, numFailed = 0;
-    var reloader = function(explorations, currentIndex) {
-      if (currentIndex >= explorations.length) {
-        $scope.message = 'Reloaded ' + explorations.length + ' explorations: ' +
-          numSucceeded + " succeeded, " + numFailed + " failed.";
-        return; // nothing to reload
+    var numSucceeded = 0, numFailed = 0, numTried = 0;
+    $scope.message = 'Processing...';
+    var resultPrinter = function() {
+      if (numTried < explorations.length) {
+        $scope.message = 'Processing...' + numTried + '/' + explorations.length;
+        return;
       }
+      $scope.message = 'Reloaded ' + explorations.length + ' explorations: ' +
+        numSucceeded + " succeeded, " + numFailed + " failed.";
+    };
 
-      var exploration = explorations[currentIndex];
-      $scope.message = 'Processing ' + exploration[1] + '...';
+    for (var i = 0; i < explorations.length; ++i) {
+      var exploration = explorations[i];
 
       $http.post($scope.adminHandlerUrl, {
         action: 'reload_exploration',
         exploration_id: String(exploration[0])
       }).success(function(data) {
         ++numSucceeded;
-        reloader(explorations, currentIndex + 1);
+        ++numTried;
+        resultPrinter();
       }).error(function(errorResponse) {
         ++numFailed;
-        reloader(explorations, currentIndex + 1);
+        ++numTried;
+        resultPrinter();
       });
-    };
-
-    // kick-start recursive; asynchronous reloader
-    reloader(explorations, 0);
+    }
   };
 
   $scope.startNewJob = function(jobType) {

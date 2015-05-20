@@ -60,7 +60,7 @@ END_DEST = 'END'
 # incompatible changes are made to the states blob schema in the data store,
 # this version number must be changed and the exploration migration job be
 # executed.
-CURRENT_EXPLORATION_STATES_SCHEMA_VERSION = 1
+CURRENT_EXPLORATION_STATES_SCHEMA_VERSION = 2
 
 # The default number of exploration tiles to load at a time in the gallery
 # page.
