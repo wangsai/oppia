@@ -130,43 +130,5 @@ describe('State Interaction controller', function() {
       expect(ess.getState('End State').content[0].value).toEqual('Congratulations, you have finished!');
       expect(ess.getState('End State').interaction.id).toEqual('EndExploration');
     });
-
-    it('should remove default text when changing explorations', function() {
-      ecs.setActiveStateName('End State');
-      scope.initStateEditor();
-      
-      var state = ess.getState('End State');
-      state.interaction.id = 'EndExploration';
-      ess.setState('End State', state);
-      scope.updateEndExplorationDefaultContent(true);
-
-      state = ess.getState('End State');
-      state.interaction.id = 'TextInput';
-      ess.setState('End State', state);
-      scope.updateEndExplorationDefaultContent(false);
-
-      expect(state.content[0].value).toEqual('Congratulations, you have finished!');
-      expect(ess.getState('End State').content[0].value).toEqual('');
-      expect(ess.getState('End State').interaction.id).toEqual('TextInput');
-    });
-
-    it('should keep modified default text when changing explorations', function() {
-      ecs.setActiveStateName('End State');
-      scope.initStateEditor();
-      
-      var state = ess.getState('End State');
-      state.interaction.id = 'EndExploration';
-      ess.setState('End State', state);
-      scope.updateEndExplorationDefaultContent(true);
-
-      state = ess.getState('End State');
-      state.content[0].value += ' And some more stuff.';
-      state.interaction.id = 'TextInput';
-      ess.setState('End State', state);
-      scope.updateEndExplorationDefaultContent(false);
-
-      expect(ess.getState('End State').content[0].value).toEqual('Congratulations, you have finished! And some more stuff.');
-      expect(ess.getState('End State').interaction.id).toEqual('TextInput');
-    });
   });
 });

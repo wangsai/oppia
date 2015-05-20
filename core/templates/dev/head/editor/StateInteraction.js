@@ -260,9 +260,6 @@ oppia.controller('StateInteraction', [
           if (selectedInteractionId == 'EndExploration') {
             // new/changed interaction
             $scope.updateEndExplorationDefaultContent(true);
-          } else if (currentInterId == 'EndExploration') {
-            // no longer end exp
-            $scope.updateEndExplorationDefaultContent(false);
           }
 
           stateInteractionIdService.displayed = selectedInteractionId;
@@ -297,12 +294,6 @@ oppia.controller('StateInteraction', [
   $scope.deleteInteraction = function() {
     if (!window.confirm('Are you sure you want to delete this interaction? This will also clear all its rules.')) {
       return false;
-    }
-
-    // check if it's an EndExploration; if so, the state's defaulted content may
-    // need to be cleared
-    if (stateInteractionIdService.savedMemento == 'EndExploration') {
-      $scope.updateEndExplorationDefaultContent(false); // no longer end exp
     }
 
     stateInteractionIdService.displayed = null;
