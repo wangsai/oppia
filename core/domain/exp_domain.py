@@ -1528,6 +1528,15 @@ class Exploration(object):
     @classmethod
     def convert_states_v0_dict_to_v1_dict(cls, exploration_dict):
         exploration_dict['states_schema_version'] = 1
+
+        # ensure widgets are renamed to be interactions
+        for _, state_defn in exploration_dict['states'].iteritems():
+            state_defn['interaction'] = copy.deepcopy(state_defn['widget'])
+            state_defn['interaction']['id'] = copy.deepcopy(
+                state_defn['interaction']['widget_id'])
+            del state_defn['interaction']['widget_id']
+            del state_defn['interaction']['sticky']
+            del state_defn['widget']
         return exploration_dict
 
     # Converts from version 1 to 2. Version 2 is not a different states schema from
