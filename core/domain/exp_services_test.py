@@ -290,7 +290,7 @@ class ExplorationCreateAndDeleteUnitTests(ExplorationServicesUnitTests):
         retrieved_exploration = exp_services.get_exploration_by_id(self.EXP_ID)
         self.assertEqual(retrieved_exploration.title, 'A title')
         self.assertEqual(retrieved_exploration.category, 'A category')
-        self.assertEqual(len(retrieved_exploration.states), 2) # initial/end
+        self.assertEqual(len(retrieved_exploration.states), 1)
         self.assertEqual(len(retrieved_exploration.param_specs), 1)
         self.assertEqual(
             retrieved_exploration.param_specs.keys()[0], 'theParameter')
@@ -483,7 +483,6 @@ tags: []
             self.EXP_ID, self.OWNER_ID, objective='The objective')
         exploration.states[exploration.init_state_name].interaction.handlers[
             0].rule_specs[0].dest = exploration.init_state_name
-        exploration.delete_state(feconf.END_DEST) # END state not needed
         exploration.add_states(['New state'])
         exploration.states['New state'].update_interaction_id('TextInput')
         exp_services._save_exploration(self.OWNER_ID, exploration, '', [])
@@ -501,7 +500,6 @@ tags: []
             self.EXP_ID, self.OWNER_ID, objective='The objective')
         exploration.states[exploration.init_state_name].interaction.handlers[
             0].rule_specs[0].dest = exploration.init_state_name
-        exploration.delete_state(feconf.END_DEST) # END state not needed
         exploration.add_states(['New state'])
         exploration.states['New state'].update_interaction_id('TextInput')
         exp_services._save_exploration(self.OWNER_ID, exploration, '', [])
@@ -528,7 +526,6 @@ tags: []
 
         exploration.states[exploration.init_state_name].interaction.handlers[
             0].rule_specs[0].dest = exploration.init_state_name
-        exploration.delete_state(feconf.END_DEST) # END state not needed
         exploration.add_states(['New state'])
         exploration.states['New state'].update_interaction_id('TextInput')
         with open(os.path.join(feconf.TESTS_DATA_DIR, 'img.png')) as f:
@@ -636,7 +633,6 @@ param_changes: []
             self.EXP_ID, self.OWNER_ID, objective='The objective')
         exploration.states[exploration.init_state_name].interaction.handlers[
             0].rule_specs[0].dest = exploration.init_state_name
-        exploration.delete_state(feconf.END_DEST) # END state not needed
         exploration.add_states(['New state'])
         exploration.states['New state'].update_interaction_id('TextInput')
         exp_services._save_exploration(self.OWNER_ID, exploration, '', [])
@@ -653,7 +649,6 @@ param_changes: []
 
         exploration.states[exploration.init_state_name].interaction.handlers[
             0].rule_specs[0].dest = exploration.init_state_name
-        exploration.delete_state(feconf.END_DEST) # END state not needed
         exploration.add_states(['New state'])
         exploration.states['New state'].update_interaction_id('TextInput')
         exploration.objective = 'The objective'
@@ -1002,7 +997,7 @@ class CommitMessageHandlingTests(ExplorationServicesUnitTests):
     def setUp(self):
         super(CommitMessageHandlingTests, self).setUp()
         exploration = self.save_new_valid_exploration(
-            self.EXP_ID, self.OWNER_ID)
+            self.EXP_ID, self.OWNER_ID, end_state_name='End')
         self.init_state_name = exploration.init_state_name
 
     def test_record_commit_message(self):
@@ -1059,7 +1054,7 @@ class ExplorationSnapshotUnitTests(ExplorationServicesUnitTests):
 
     def test_get_exploration_snapshots_metadata(self):
         v1_exploration = self.save_new_valid_exploration(
-            self.EXP_ID, self.OWNER_ID)
+            self.EXP_ID, self.OWNER_ID, end_state_name='End')
 
         snapshots_metadata = exp_services.get_exploration_snapshots_metadata(
             self.EXP_ID)
@@ -1249,7 +1244,7 @@ class ExplorationSnapshotUnitTests(ExplorationServicesUnitTests):
 
         # The final exploration should have exactly one state.
         exploration = exp_services.get_exploration_by_id(self.EXP_ID)
-        self.assertEqual(len(exploration.states), 2) # initial and end states
+        self.assertEqual(len(exploration.states), 1)
 
     def test_versioning_with_reverting(self):
         exploration = self.save_new_valid_exploration(
@@ -1278,7 +1273,7 @@ class ExplorationSnapshotUnitTests(ExplorationServicesUnitTests):
         exp_services.revert_exploration('committer_id_v4', self.EXP_ID, 3, 1)
         exploration = exp_services.get_exploration_by_id(self.EXP_ID)
         self.assertEqual(exploration.title, 'A title')
-        self.assertEqual(len(exploration.states), 2) # initial and end states
+        self.assertEqual(len(exploration.states), 1)
         self.assertEqual(exploration.version, 4)
 
         snapshots_metadata = exp_services.get_exploration_snapshots_metadata(
