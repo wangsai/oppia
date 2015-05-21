@@ -1278,15 +1278,17 @@ oppia.factory('explorationWarningsService', [
     var _graphData = graphDataService.getGraphData();
 
     var statesWithoutInteractionIds = _getStatesWithoutInteractionIds();
-    if (statesWithoutInteractionIds.length) {
-      _warningsList.push({
-        type: WARNING_TYPES.CRITICAL,
-        message: (
-          'Please add interactions for these states: ' +
-          statesWithoutInteractionIds.join(', ') + '.')
-      });
-    }
-
+	    
+	    if (statesWithoutInteractionIds.length) {
+	    	if(statesWithoutInteractionIds[0] !== "First State"){
+	      _warningsList.push({
+	        type: WARNING_TYPES.CRITICAL,
+	        message: (
+	          'Please add interactions for these states: ' +
+	          statesWithoutInteractionIds.join(', ') + '.')
+	      });
+	  		}
+	    }
     if (_graphData) {
       var unreachableStateNames = _getUnreachableNodeNames(
         [_graphData.initStateId], _graphData.nodes, _graphData.links);
@@ -1297,35 +1299,39 @@ oppia.factory('explorationWarningsService', [
         unreachableStateNames.splice(endIndex, 1);
       }
 
-      if (unreachableStateNames.length) {
-        _warningsList.push({
-          type: WARNING_TYPES.ERROR,
-          message: (
-            'The following state(s) are unreachable: ' +
-            unreachableStateNames.join(', ') + '.')
-        });
-      } else {
-        // Only perform this check if all states are reachable.
-        var deadEndStates = _getUnreachableNodeNames(
-          _graphData.finalStateIds, _graphData.nodes,
-          _getReversedLinks(_graphData.links));
-        if (deadEndStates.length) {
-          var deadEndStatesString = null;
-          if (deadEndStates.length === 1) {
-            deadEndStatesString = 'the following state: ' + deadEndStates[0];
-          } else {
-            deadEndStatesString = 'each of: ' + deadEndStates.join(', ');
-          }
+	    if(statesWithoutInteractionIds !== "First State"){  
+	      if (unreachableStateNames.length) {
+	        _warningsList.push({
+	          type: WARNING_TYPES.ERROR,
+	          message: (
+	            'The following state(s) are unreachable: ' +
+	            unreachableStateNames.join(', ') + '.')
+	        });
+	      } else {
+	        // Only perform this check if all states are reachable.
+	        var deadEndStates = _getUnreachableNodeNames(
+	          _graphData.finalStateIds, _graphData.nodes,
+	          _getReversedLinks(_graphData.links));
+	        if (deadEndStates.length) {
+	          var deadEndStatesString = null;
+	          if (deadEndStates.length === 1) {
+	            deadEndStatesString = 'the following state: ' + deadEndStates[0];
+	          } else {
+	            deadEndStatesString = 'each of: ' + deadEndStates.join(', ');
+	          }
 
-          _warningsList.push({
-            type: WARNING_TYPES.ERROR,
-            message: (
-              'Please make sure there\'s a way to complete ' +
-              'the exploration starting from ' +
-              deadEndStatesString + '.')
-          });
-        }
-      }
+	            if(deadEndStates[0] !== "First State"){
+	            _warningsList.push({
+	              type: WARNING_TYPES.ERROR,
+	              message: (
+	                'Please make sure there\'s a way to complete ' +
+	                'the exploration starting from ' +
+	                deadEndStatesString + '.')
+	            });
+	        	}
+	        }
+	      }
+	    }
 
       _warningsList = _warningsList.concat(_verifyParameters(
         [_graphData.initStateId], _graphData.nodes, _graphData.links));
