@@ -106,6 +106,7 @@ skin_customizations:
           title:
             value: The Test Gadget!
         gadget_id: TestGadget
+        editor_unique_name: ATestGadget
         visible_in_states:
           - New state
           - Second state
@@ -365,7 +366,8 @@ class ExplorationDomainUnitTests(test_utils.GenericTestBase):
         exploration = exp_domain.Exploration.from_yaml(
             'exp1', 'Title', 'Category', SAMPLE_YAML_CONTENT_WITH_GADGETS)
 
-        invalid_gadget_instance = exp_domain.GadgetInstance('bad_ID', [], {})
+        invalid_gadget_instance = exp_domain.GadgetInstance(
+            'bad_ID', 'anEditorUniqueName', [], {})
         with self.assertRaisesRegexp(
                  utils.ValidationError,
                  'Unknown gadget with ID bad_ID is not in the registry.'):
@@ -418,7 +420,9 @@ class ExplorationDomainUnitTests(test_utils.GenericTestBase):
             ['TestGadget']
         )
 
-        another_gadget = exp_domain.GadgetInstance('AnotherGadget', [], {})
+        another_gadget = exp_domain.GadgetInstance(
+            'AnotherGadget', 'EditorUniqueName1', [], {}
+        )
         exploration_with_gadgets.skin_instance.panel_contents_dict[
             'right'].append(another_gadget)
         self.assertEqual(
@@ -963,6 +967,7 @@ class SkinInstanceUnitTests(test_utils.GenericTestBase):
                             'floors': {'value': 1},
                             'title': {'value': 'The Test Gadget!'}},
                         'gadget_id': 'TestGadget',
+                        'editor_unique_name': 'ATestGadget',
                         'visible_in_states': ['New state', 'Second state']
                     }
                 ],
@@ -1093,6 +1098,7 @@ class GadgetInstanceUnitTests(test_utils.GenericTestBase):
             test_gadget_as_dict,
             {
                 'gadget_id': 'TestGadget',
+                'editor_unique_name': 'ATestGadget',
                 'visible_in_states': ['New state', 'Second state'],
                 'customization_args': {
                     'title': {

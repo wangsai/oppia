@@ -553,8 +553,12 @@ class InteractionInstance(object):
 class GadgetInstance(object):
     """Value object for an instance of a gadget."""
 
-    def __init__(self, gadget_id, visible_in_states, customization_args):
+    def __init__(self, gadget_id, editor_unique_name,
+                 visible_in_states, customization_args):
         self.id = gadget_id
+
+        # Unique name set by authors to distinguish instance in the Editor UI.
+        self.editor_unique_name = editor_unique_name
 
         # List of State name strings where this Gadget is visible.
         self.visible_in_states = visible_in_states
@@ -607,6 +611,7 @@ class GadgetInstance(object):
         """Returns GadgetInstance data represented in dict form."""
         return {
             'gadget_id': self.id,
+            'editor_unique_name': self.editor_unique_name,
             'visible_in_states': self.visible_in_states,
             'customization_args': self._get_full_customization_args(),
         }
@@ -616,6 +621,7 @@ class GadgetInstance(object):
         """Returns GadgetInstance constructed from dict data."""
         return GadgetInstance(
             gadget_dict['gadget_id'],
+            gadget_dict['editor_unique_name'],
             gadget_dict['visible_in_states'],
             gadget_dict['customization_args'])
 
@@ -645,8 +651,9 @@ class SkinInstance(object):
         for panel_name, gdict_list in skin_customizations[
                 'panels_contents'].iteritems():
             self.panel_contents_dict[panel_name] = [GadgetInstance(
-                gdict['gadget_id'], gdict['visible_in_states'],
-                gdict['customization_args']) for gdict in gdict_list]
+                gdict['gadget_id'], gdict['editor_unique_name'],
+                gdict['visible_in_states'], gdict['customization_args'])
+                                                    for gdict in gdict_list]
 
     @property
     def skin(self):
