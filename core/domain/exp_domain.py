@@ -974,7 +974,8 @@ class Exploration(object):
             language_code=feconf.DEFAULT_LANGUAGE_CODE,
             create_default_end_state=False):
         init_state_dict = State.create_default_state(
-            feconf.DEFAULT_INIT_STATE_NAME, is_initial_state=True).to_dict()
+            feconf.DEFAULT_INIT_STATE_NAME if not create_default_end_state
+            else 'END', is_initial_state=True).to_dict()
 
         states_dict = {
             feconf.DEFAULT_INIT_STATE_NAME: init_state_dict
