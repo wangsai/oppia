@@ -1531,6 +1531,8 @@ class Exploration(object):
 
         # ensure widgets are renamed to be interactions
         for _, state_defn in exploration_dict['states'].iteritems():
+            if 'widget' not in state_defn:
+                continue
             state_defn['interaction'] = copy.deepcopy(state_defn['widget'])
             state_defn['interaction']['id'] = copy.deepcopy(
                 state_defn['interaction']['widget_id'])
