@@ -16,6 +16,7 @@
 
 import ast
 import collections
+import json
 
 from core import jobs
 from core.platform import models
@@ -387,4 +388,4 @@ class NullStateHitEventsMigrator(jobs.BaseMapReduceJobManager):
 
     @staticmethod
     def reduce(key, values):
-        yield (key, values)
+        yield json.dumps([key, values])

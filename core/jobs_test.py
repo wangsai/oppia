@@ -19,6 +19,7 @@
 __author__ = 'Sean Lip'
 
 import ast
+import json
 
 from core import jobs
 from core import jobs_registry
@@ -497,7 +498,7 @@ class SampleMapReduceJobManager(jobs.BaseMapReduceJobManager):
 
     @staticmethod
     def reduce(key, values):
-        yield (key, sum([int(value) for value in values]))
+        yield json.dumps((key, sum([int(value) for value in values])))
 
 
 class MapReduceJobIntegrationTests(test_utils.GenericTestBase):
@@ -597,7 +598,7 @@ class TwoClassesMapReduceJobManager(jobs.BaseMapReduceJobManager):
 
     @staticmethod
     def reduce(key, values):
-        yield (key, sum([int(value) for value in values]))
+        yield json.dumps([key, sum([int(value) for value in values])])
 
 
 class TwoClassesMapReduceJobIntegrationTests(test_utils.GenericTestBase):
