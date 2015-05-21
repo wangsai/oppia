@@ -188,7 +188,8 @@ class NewExploration(base.BaseHandler):
         new_exploration_id = exp_services.get_new_exploration_id()
         exploration = exp_domain.Exploration.create_default_exploration(
             new_exploration_id, title, category,
-            objective=objective, language_code=language_code)
+            objective=objective, language_code=language_code,
+            create_default_end_state=True)
         exp_services.save_new_exploration(self.user_id, exploration)
 
         self.render_json({EXPLORATION_ID_KEY: new_exploration_id})

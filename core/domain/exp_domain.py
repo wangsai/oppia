@@ -971,13 +971,20 @@ class Exploration(object):
     @classmethod
     def create_default_exploration(
             cls, exploration_id, title, category, objective='',
-            language_code=feconf.DEFAULT_LANGUAGE_CODE):
+            language_code=feconf.DEFAULT_LANGUAGE_CODE,
+            create_default_end_state=False):
         init_state_dict = State.create_default_state(
             feconf.DEFAULT_INIT_STATE_NAME, is_initial_state=True).to_dict()
 
         states_dict = {
             feconf.DEFAULT_INIT_STATE_NAME: init_state_dict
         }
+
+        if create_default_end_state:
+            end_state_dict = State.create_default_state(
+                'END', is_initial_state=False).to_dict()
+            end_state_dict['interaction']['id'] = 'EndExploration'
+            states_dict['END'] = end_state_dict
 
         return cls(
             exploration_id, title, category, objective, language_code, [], '',
