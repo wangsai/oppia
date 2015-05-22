@@ -20,8 +20,11 @@
 
 // TODO(vjoisar): desc for the gadget ui editor
 oppia.controller('GadgetEditor', [
-    '$scope', '$http', '$rootScope', '$modal', '$filter', 'GADGET_SPECS',
-    function($scope, $http, $rootScope, $modal, $filter, GADGET_SPECS) {
+    '$scope', '$http', '$rootScope', '$modal', '$filter', 'explorationGadgetsService',
+     'editorContextService', 'GADGET_SPECS',
+    function($scope, $http, $rootScope, $modal, $filter, explorationGadgetsService, 
+      editorContextService, GADGET_SPECS) {
+      $scope.gadgetId = '';
     	$scope.openAddGadgetInteractionModal = function() {
     		$modal.open({
         	templateUrl: 'modals/addGadgetInteraction',
@@ -36,6 +39,17 @@ oppia.controller('GadgetEditor', [
         				$scope.selectedGadgetId = newGadgetId;
         				var gadgetSpec = GADGET_SPECS[newGadgetId];
         				$scope.customizationArgSpecs = gadgetSpec.customization_arg_specs;
+                //adding position :- left, right, bottom panel.
+                /*
+                $scope.customizationArgSpecs.push({
+                  'name': 'position',
+                  'description': 'Position for the gadget.',
+                  'schema': {
+                    ' type': 'unicode',
+                    'choices': ['left', 'right', 'bottom']
+                  },
+                  'default_value': 'left'
+                });*/
             		$scope.tmpCustomizationArgs = [];
             		for (var i = 0; i < $scope.customizationArgSpecs.length; i++) {
                 	$scope.tmpCustomizationArgs.push({
@@ -56,16 +70,23 @@ oppia.controller('GadgetEditor', [
           		};
           		$scope.addGadget = function() {
             		$modalInstance.close({
-              		selectedGadgetId: $scope.selectedGadgetId,
-              		tmpCustomizationArgs: $scope.tmpCustomizationArgs
+              		gadgetId: $scope.selectedGadgetId,
+              		customizationArgs: $scope.tmpCustomizationArgs
             		});
           		};
     			}]
     		}).result.then(function(result){
     			$scope.gadgetId = result.selectedGadgetId;
-    			console.log(result);
+          $scope.$parent.gadgetId = result.selectedGadgetId;
+          //TODO(azunis/vjoisar): Add logic for multiple state visibility.
+          result['visibleInStates'] = editorContextService.getActiveStateName();
+          explorationGadgetsService.addGadget(result);
     		}, function() {
     			console.log('Gadget modal closed');
     		});
     	};
+
+      $scope.deleteGadget = function(gadgetId) {
+        explorationGadgetsService.deleteGadget(gadgetId);
+      }
 }]);

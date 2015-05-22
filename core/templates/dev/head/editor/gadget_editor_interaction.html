@@ -1,13 +1,20 @@
 <div ng-controller="GadgetEditor" id="tutorialGadgetInteraction">
-	<div ng-if="true">
-    <span style="font-size: 16px;">
-      <strong>Gadgets</strong>
-    </span>
-    <md-card style="background-color: white; margin: 20px 0px; padding: 10px 10px;">
-      <button type="button" class="btn btn-default btn-xs oppia-add-gadget-button protractor-test-open-add-gadget-modal" ng-click="openAddGadgetInteractionModal()">
-        Insert Gadget
-      </button>
-    </md-card>
+  <span style="font-size: 16px;">
+    <strong>Gadgets</strong>
+  </span>
+  <md-card style="background-color: white; margin: 20px 0px; padding: 10px 10px;">
+    <button type="button" class="btn btn-default btn-xs oppia-add-gadget-button protractor-test-open-add-gadget-modal" ng-click="openAddGadgetInteractionModal()">
+      Insert Gadget
+    </button>
+  </md-card>
+  <div ng-if="false"> TODO(azunis/vjoisar):(resolve gadget id in modal controller)</div>
+  <div ng-if="!!gadgetId"
+      class="gadget-panel conversation-skin-left-gadget-panel ng-isolate-scope"
+      style="margin-left: 50px;width: 200px;height:400px;position: fixed;left: 0;top: 100px; background:white;border:1px solid lightgrey;">
+      <div style="display:inline-block">
+        <[gadgetId]>
+        <img src="/third_party/static/material-design-icons-1.0.1/ic_close_black_48dp.png" class="protractor-test-delete-interaction oppia-delete-interaction-button oppia-transition-200" ng-click="deleteGadget(gadgetId)"></span>
+      </div>
   </div>
 </div>
 

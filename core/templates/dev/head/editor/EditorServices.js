@@ -178,6 +178,9 @@ oppia.factory('changeListService', [
   var CMD_DELETE_STATE = 'delete_state';
   var CMD_EDIT_STATE_PROPERTY = 'edit_state_property';
   var CMD_EDIT_EXPLORATION_PROPERTY = 'edit_exploration_property';
+  // All gadget commands
+  var CMD_ADD_GADGET = 'add_gadget';
+  var CMD_DELETE_GADGET = 'delete_gadget';
 
   var ALLOWED_EXPLORATION_BACKEND_NAMES = {
     'title': true,
@@ -320,6 +323,40 @@ oppia.factory('changeListService', [
       }
       var lastChange = explorationChangeList.pop();
       undoneChangeStack.push(lastChange);
+    },
+    /**
+     * Saves a gadget dict that represents a new gadget.
+     *
+     * It is the responsbility of the caller to check that the gadget dict
+     * is correctly formed
+     *
+     * @param {object} gadgetData The dict containing new gadget information.
+     */
+    addGadget: function(gadgetData) {
+      console.log(gadgetData);
+      return;//TODO(azunis/vjoisar): Remove  after backend is wired to take gadget requests.
+      this._addChange({
+        cmd: CMD_ADD_GADGET,
+        //TODO(azunis/vjoisar): enforce gadget dict keys.
+        gadget_dict: gadgetData
+      });
+    },
+    /**
+     * Saves a gadget dict that represents a new gadget.
+     *
+     * It is the responsbility of the caller to check that the gadget dict
+     * is correctly formed
+     *
+     * @param {object} gadgetData The dict containing new gadget information.
+     */
+    deleteGadget: function(gadgetId) {
+      console.log(gadgetId);
+      return;//TODO(azunis/vjoisar): Remove  after backend is wired to take gadget requests.
+      this._addChange({
+        cmd: CMD_ADD_GADGET,
+        //TODO(azunis/vjoisar): enforce gadget dict keys.
+        gadget_id: gadgetId
+      });
     }
   };
 }]);
@@ -843,7 +880,6 @@ oppia.factory('explorationGadgetsService', [
     },
     setGadget: function(gadgetName, gadgetData) {
       _gadgets[gadgetName] = angular.copy(gadgetData);
-      $rootScope.$broadcast('refreshGraph');
     },
     isNewGadgetNameValid: function(newGadgetName, showWarnings) {
       if (_gadgets[newGadgetName]) {
@@ -870,7 +906,10 @@ oppia.factory('explorationGadgetsService', [
         return generatedGadgetName;
       }
     },
-    addGadget: function(newGadgetName, successCallback) {
+    addGadget: function(gadgetData, successCallback) {
+      changeListService.addGadget(gadgetData);
+      return;
+      /*
       newGadgetName = $filter('normalizeWhitespace')(newGadgetName);
       if (!validatorsService.isValidGadgetName(newGadgetName, true)) {
         return;
@@ -885,9 +924,11 @@ oppia.factory('explorationGadgetsService', [
         newGadgetName);
       // TODO(anuzis/vjoisar): implement changeListService.addGadget
       changeListService.addGadget(newGadgetName);
+      */
       if (successCallback) {
         successCallback(newGadgetName);
       }
+
     },
     deleteGadget: function(deleteGadgetName) {
       warningsData.clear();
