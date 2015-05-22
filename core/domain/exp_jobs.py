@@ -243,7 +243,8 @@ class ExplorationMigrator(jobs.BaseMapReduceJobManager):
         exp = exp_services.get_exploration_from_model(item)
 
         # was the exploration updated?
-        if exp.prev_states_schema_version is not None:
+        if (hasattr(exp, 'prev_states_schema_version') and
+                exp.prev_states_schema_version is not None):
             exp_services.save_exploration(feconf.MIGRATION_BOT_USERNAME, exp,
                 'Update exploration states from schema version ' +
                 str(exp.prev_states_schema_version) + ' to ' +
