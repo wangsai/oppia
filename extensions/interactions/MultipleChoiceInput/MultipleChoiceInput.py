@@ -21,7 +21,6 @@ class MultipleChoiceInput(base.BaseInteraction):
     """Interaction for multiple choice input."""
 
     name = 'Multiple Choice'
-    category = ''
     description = (
         'Allows learners to select one of a list of multiple-choice options.')
     display_mode = base.DISPLAY_MODE_INLINE
@@ -32,7 +31,7 @@ class MultipleChoiceInput(base.BaseInteraction):
 
     _customization_arg_specs = [{
         'name': 'choices',
-        'description': 'The options that the learner can select from.',
+        'description': 'Multiple Choice options',
         'schema': {
             'type': 'list',
             'validators': [{
@@ -42,12 +41,12 @@ class MultipleChoiceInput(base.BaseInteraction):
             'items': {
                 'type': 'html',
                 'ui_config': {
-                    'size': 'small',
-                }
+                    'hide_complex_extensions': True,
+                },
             },
             'ui_config': {
                 'add_element_text': 'Add multiple choice option',
             }
         },
-        'default_value': ['Default choice'],
+        'default_value': ['Sample multiple-choice answer'],
     }]

@@ -20,15 +20,28 @@
 
 oppia.controller('ExplorationSettings', [
     '$scope', '$http', '$window', '$modal', '$rootScope', 'activeInputData', 'explorationData',
-    'explorationTitleService', 'explorationCategoryService',
-    'explorationObjectiveService', 'explorationLanguageCodeService', 'explorationRightsService',
+    'explorationTitleService', 'explorationCategoryService', 'explorationObjectiveService',
+    'explorationLanguageCodeService', 'explorationTagsService', 'explorationRightsService',
     'explorationInitStateNameService', 'explorationParamSpecsService', 'changeListService',
-    'warningsData', 'explorationStatesService', function(
+    'warningsData', 'explorationStatesService', 'explorationParamChangesService',
+    'explorationWarningsService', 'CATEGORY_LIST', function(
       $scope, $http, $window, $modal, $rootScope, activeInputData, explorationData,
-      explorationTitleService, explorationCategoryService,
-      explorationObjectiveService, explorationLanguageCodeService, explorationRightsService,
+      explorationTitleService, explorationCategoryService, explorationObjectiveService,
+      explorationLanguageCodeService, explorationTagsService, explorationRightsService,
       explorationInitStateNameService, explorationParamSpecsService, changeListService,
-      warningsData, explorationStatesService) {
+      warningsData, explorationStatesService, explorationParamChangesService,
+      explorationWarningsService, CATEGORY_LIST) {
+
+  $scope.CATEGORY_LIST_FOR_SELECT2 = [];
+
+  for (var i = 0; i < CATEGORY_LIST.length; i++) {
+    $scope.CATEGORY_LIST_FOR_SELECT2.push({
+      id: CATEGORY_LIST[i],
+      text: CATEGORY_LIST[i]
+    });
+  }
+
+  $scope.TAG_REGEX = GLOBALS.TAG_REGEX;
 
   var GALLERY_PAGE_URL = '/gallery';
   var EXPLORE_PAGE_PREFIX = '/explore/';
@@ -44,13 +57,15 @@ oppia.controller('ExplorationSettings', [
     $scope.explorationCategoryService = explorationCategoryService;
     $scope.explorationObjectiveService = explorationObjectiveService;
     $scope.explorationLanguageCodeService = explorationLanguageCodeService;
+    $scope.explorationTagsService = explorationTagsService;
     $scope.explorationRightsService = explorationRightsService;
     $scope.explorationInitStateNameService = explorationInitStateNameService;
     $scope.explorationParamSpecsService = explorationParamSpecsService;
+    $scope.explorationParamChangesService = explorationParamChangesService;
 
     explorationData.getData().then(function(data) {
-      $scope.explorationParamChanges = data.param_changes || [];
       $scope.refreshSettingsTab();
+      $scope.hasPageLoaded = true;
     });
   };
 
@@ -61,6 +76,15 @@ oppia.controller('ExplorationSettings', [
     // directly (by entering a URL that ends with /settings) results in a
     // console error.
     if (_states) {
+      var newCategory = {
+        id: explorationCategoryService.displayed,
+        text: explorationCategoryService.displayed
+      };
+
+      if ($scope.CATEGORY_LIST_FOR_SELECT2.indexOf(newCategory) === -1) {
+        $scope.CATEGORY_LIST_FOR_SELECT2.push(newCategory);
+      }
+
       $scope.stateNames = Object.keys(_states);
     }
   };
@@ -85,10 +109,15 @@ oppia.controller('ExplorationSettings', [
 
   $scope.saveExplorationObjective = function() {
     explorationObjectiveService.saveDisplayedValue();
+    explorationWarningsService.updateWarnings();
   };
 
   $scope.saveExplorationLanguageCode = function() {
     explorationLanguageCodeService.saveDisplayedValue();
+  };
+
+  $scope.saveExplorationTags = function() {
+    explorationTagsService.saveDisplayedValue();
   };
 
   $scope.saveExplorationInitStateName = function() {
@@ -105,11 +134,9 @@ oppia.controller('ExplorationSettings', [
     $rootScope.$broadcast('refreshGraph');
   };
 
-  $scope.saveExplorationParamChanges = function(newValue, oldValue) {
-    if (!angular.equals(newValue, oldValue)) {
-      changeListService.editExplorationProperty(
-        'param_changes', newValue, oldValue);
-    }
+  $scope.saveExplorationParamChanges = function() {
+    explorationParamChangesService.saveDisplayedValue();
+    explorationWarningsService.updateWarnings();
   };
 
   // TODO(sll): Modify this so that it works correctly when discarding changes

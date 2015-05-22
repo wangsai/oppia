@@ -21,6 +21,7 @@ __author__ = 'Sean Lip'
 from core.domain import exp_jobs
 from core.domain import stats_jobs
 from core.domain import user_jobs
+from core.domain import feedback_jobs
 
 # List of all manager classes for one-off batch jobs for which to show controls
 # on the admin dashboard.
@@ -29,7 +30,8 @@ ONE_OFF_JOB_MANAGERS = [
     exp_jobs.IndexAllExplorationsJobManager,
     exp_jobs.ExpSummariesCreationOneOffJob,
     exp_jobs.ExplorationValidityJobManager,
-    stats_jobs.OneOffFixStartCounts]
+    stats_jobs.OneOffFixStartCounts,
+    stats_jobs.NullStateHitEventsMigrator]
 
 # List of all ContinuousComputation managers to show controls for on the
 # admin dashboard.
@@ -38,7 +40,8 @@ ONE_OFF_JOB_MANAGERS = [
 ALL_CONTINUOUS_COMPUTATION_MANAGERS = [
     exp_jobs.SearchRanker,
     stats_jobs.StatisticsAggregator,
-    user_jobs.DashboardRecentUpdatesAggregator]
+    user_jobs.DashboardRecentUpdatesAggregator,
+    feedback_jobs.FeedbackAnalyticsAggregator]
 
 
 class ContinuousComputationEventDispatcher(object):

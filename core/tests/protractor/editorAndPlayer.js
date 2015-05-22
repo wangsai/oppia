@@ -48,15 +48,31 @@ describe('State editor', function() {
     users.logout();
   });
 
+  it('should walk through the tutorial when user repeteadly clicks Next', function() {
+    var NUM_TUTORIAL_STAGES = 5;
+    users.createUser('user@example.com', 'user');
+    users.login('user@example.com');
+
+    workflow.createExplorationAndStartTutorial('sums', 'maths');
+    for (var i = 0; i < NUM_TUTORIAL_STAGES - 1; i++) {
+      editor.progressInTutorial();
+    }
+    editor.finishTutorial();
+    users.logout();
+  });
+
   it('should create content and multiple choice interactions', function() {
     users.createUser('user2@example.com', 'user2');
     users.login('user2@example.com');
 
     workflow.createExploration('sums', 'maths');
     editor.setContent(function(richTextEditor) {
-      richTextEditor.appendBoldText('bold text ');
-      richTextEditor.appendItalicText('italic text ');
+      richTextEditor.appendBoldText('bold text');
+      richTextEditor.appendPlainText(' ');
+      richTextEditor.appendItalicText('italic text');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.appendUnderlineText('underline text');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.appendOrderedList(['entry 1', 'entry 2']);
       richTextEditor.appendUnorderedList(['an entry', 'another entry']);
     });
@@ -82,6 +98,7 @@ describe('State editor', function() {
     users.login('user3@example.com');
 
     workflow.createExploration('sums', 'maths');
+    editor.setContent(forms.toRichText('some content'));
     editor.setInteraction('NumericInput');
     editor.addRule('NumericInput', function(richTextEditor) {
       richTextEditor.appendBoldText('correct');
@@ -155,11 +172,15 @@ describe('Full exploration editor', function() {
       // Check discarding of changes
       editor.setStateName('state1');
       editor.expectStateNamesToBe(['state1', 'END']);
+      editor.setContent(forms.toRichText('state1 content'));
       editor.setInteraction('TextInput');
       editor.addRule('TextInput', null, 'END', 'Default');
       editor.RuleEditor('default').createNewStateAndSetDestination('state2');
-      editor.expectStateNamesToBe(['state1', 'state2', 'END']);
       editor.moveToState('state2');
+      // NOTE: we must move to the state before checking state names to avoid
+      // inexplicable failures of the protractor utility that reads state names
+      // (the user-visible names are fine either way). See issue 732 for more.
+      editor.expectStateNamesToBe(['state1', 'state2', 'END']);
       editor.setInteraction('EndExploration');
 
       editor.discardChanges();
@@ -244,15 +265,13 @@ describe('rich-text components', function() {
     workflow.createExploration('RTE components', 'maths');
 
     editor.setContent(function(richTextEditor) {
-      richTextEditor.appendPlainText('plainly');
       richTextEditor.appendBoldText('bold');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.addRteComponent(
         'Collapsible', 'title', forms.toRichText('inner'));
       // TODO (Jacob) add test for image RTE component
       richTextEditor.addRteComponent('Link', 'http://google.com/', true);
       richTextEditor.addRteComponent('Math', 'abc');
-      richTextEditor.appendUnderlineText('underlined');
-      richTextEditor.appendPlainText('extra');
       richTextEditor.addRteComponent('Tabs', [{
         title: 'title 1',
         content: forms.toRichText('contents 1')
@@ -267,14 +286,12 @@ describe('rich-text components', function() {
 
     general.moveToPlayer();
     player.expectContentToMatch(function(richTextChecker) {
-      richTextChecker.readPlainText('plainly');
       richTextChecker.readBoldText('bold');
+      richTextChecker.readPlainText(' ');
       richTextChecker.readRteComponent(
         'Collapsible', 'title', forms.toRichText('inner'));
       richTextChecker.readRteComponent('Link', 'http://google.com/', true);
       richTextChecker.readRteComponent('Math', 'abc');
-      richTextChecker.readUnderlineText('underlined');
-      richTextChecker.readPlainText('extra');
       richTextChecker.readRteComponent('Tabs', [{
         title: 'title 1',
         content: forms.toRichText('contents 1')
@@ -284,6 +301,7 @@ describe('rich-text components', function() {
       }]);
       richTextChecker.readRteComponent('Video', 'ANeHmk22a6Q', 10, 100, false);
     });
+
 
     users.logout();
   });
@@ -296,42 +314,26 @@ describe('rich-text components', function() {
 
     editor.setContent(function(richTextEditor) {
       richTextEditor.appendItalicText('slanted');
+      richTextEditor.appendPlainText(' ');
       richTextEditor.addRteComponent(
           'Collapsible', 'heading', function(collapsibleEditor) {
-        // TODO (Jacob) add sub-components when issue 423 is fixed
-        collapsibleEditor.addRteComponent('Tabs', [{
-          title: 'no1',
-          content: function(tab1Editor) {
-            tab1Editor.setPlainText('boring');
-          }
-        }, {
-          title: 'no2',
-          content: function(tab2Editor) {
-            tab2Editor.appendBoldText('fun!');
-          }
-        }]);
+        collapsibleEditor.appendBoldText('boldtext');
+        collapsibleEditor.appendPlainText(' ');
         collapsibleEditor.addRteComponent('Math', 'xyz');
       });
     });
-    editor.setInteraction('TextInput');
+
+    editor.setInteraction('EndExploration');
     editor.saveChanges();
 
     general.moveToPlayer();
     player.expectContentToMatch(function(richTextChecker) {
       richTextChecker.readItalicText('slanted');
+      richTextChecker.readPlainText(' ');
       richTextChecker.readRteComponent(
           'Collapsible', 'heading', function(collapsibleChecker) {
-        collapsibleChecker.readRteComponent('Tabs', [{
-          title: 'no1',
-          content: function(tab1Checker) {
-            tab1Checker.readPlainText('boring');
-          }
-        }, {
-          title: 'no2',
-          content: function(tab2Checker) {
-            tab2Checker.readBoldText('fun!');
-          }
-        }]);
+        collapsibleChecker.readBoldText('boldtext');
+        collapsibleChecker.readPlainText(' ');
         collapsibleChecker.readRteComponent('Math', 'xyz');
       });
     });
@@ -359,31 +361,38 @@ describe('rich-text components', function() {
 
 describe('Interactions', function() {
   it('should pass their own test suites', function() {
-    users.createUser('user21@example.com', 'user21');
-    users.login('user21@example.com');
-    workflow.createExploration('interactions', 'history');
-    editor.setInteraction('TextInput');
-    editor.addRule('TextInput', forms.toRichText('no'), null, 'Default');
+    users.createUser('interactions@example.com', 'interactions');
+    users.login('interactions@example.com');
+    workflow.createExploration('interactions', 'interactions');
+    editor.setContent(forms.toRichText('some content'));
 
-    for (var interactionName in interactions.INTERACTIONS) {
-      var interaction = interactions.INTERACTIONS[interactionName];
+    var defaultRuleSet = false;
+
+    for (var interactionId in interactions.INTERACTIONS) {
+      var interaction = interactions.INTERACTIONS[interactionId];
       for (var i = 0; i < interaction.testSuite.length; i++) {
         var test = interaction.testSuite[i];
         editor.setInteraction.apply(
-          null, [interactionName].concat(test.interactionArguments));
+          null, [interactionId].concat(test.interactionArguments));
         editor.addRule.apply(
-          null, [interactionName, null, 'END'].concat(test.ruleArguments));
+          null, [interactionId, null, 'END'].concat(test.ruleArguments));
         editor.RuleEditor(0).setFeedback(0, forms.toRichText('yes'));
+        if (!defaultRuleSet) {
+          // The default rule will be preserved for subsequent tests.
+          editor.addRule(
+            interactionId, forms.toRichText('no'), null, 'Default');
+          defaultRuleSet = true;
+        }
 
         editor.navigateToPreviewTab();
         player.expectInteractionToMatch.apply(
-          null, [interactionName].concat(test.expectedInteractionDetails));
+          null, [interactionId].concat(test.expectedInteractionDetails));
         for (var j = 0; j < test.wrongAnswers.length; j++) {
-          player.submitAnswer(interactionName, test.wrongAnswers[j]);
+          player.submitAnswer(interactionId, test.wrongAnswers[j]);
           player.expectLatestFeedbackToMatch(forms.toRichText('no'));
         }
         for (var j = 0; j < test.correctAnswers.length; j++) {
-          player.submitAnswer(interactionName, test.correctAnswers[j]);
+          player.submitAnswer(interactionId, test.correctAnswers[j]);
           player.expectLatestFeedbackToMatch(forms.toRichText('yes'));
         }
         editor.navigateToMainTab();
@@ -401,8 +410,8 @@ describe('Interactions', function() {
 
 describe('Exploration history', function() {
   it('should display the history', function() {
-    users.createUser('user121@example.com', 'user121');
-    users.login('user121@example.com');
+    users.createUser('history@example.com', 'explorationhistory');
+    users.login('history@example.com');
     workflow.createExploration('history', 'history');
 
     // Constants for colors of nodes in history graph
@@ -435,13 +444,13 @@ describe('Exploration history', function() {
     var VERSION_1_STATE_1_CONTENTS = {
       1: {text: 'content:', highlighted: false},
       2: {text: '- type: text', highlighted: false},
-      3: {text: '  value: enter 6 to continue', highlighted: true},
-      4: {text: 'interaction:', highlighted: true},
-      5: {text: '  customization_args: {}', highlighted: true},
-      6: {text: '  handlers:', highlighted: true},
-      7: {text: '  - name: submit', highlighted: true},
-      8: {text: '    rule_specs:', highlighted: true},
-      9: {text: '    - definition:', highlighted: true},
+      3: {text: '  value: <p>enter 6 to continue</p>', highlighted: true},
+      4: {text: 'interaction:', highlighted: false},
+      5: {text: '  customization_args: {}', highlighted: false},
+      6: {text: '  handlers:', highlighted: false},
+      7: {text: '  - name: submit', highlighted: false},
+      8: {text: '    rule_specs:', highlighted: false},
+      9: {text: '    - definition:', highlighted: false},
       10: {text: '        inputs:', highlighted: true},
       11: {text: '          x: 6.0', highlighted: true},
       12: {text: '        name: Equals', highlighted: true},
@@ -450,7 +459,7 @@ describe('Exploration history', function() {
       15: {text: '      dest: second', highlighted: true},
       16: {text: '      feedback: []', highlighted: true},
       17: {text: '      param_changes: []', highlighted: true},
-      18: {text: '    - definition:', highlighted: false},
+      18: {text: '    - definition:', highlighted: true},
       19: {text: '        rule_type: default', highlighted: false},
       20: {text: '      dest: first', highlighted: true},
       21: {text: '      feedback: []', highlighted: false},
@@ -462,29 +471,27 @@ describe('Exploration history', function() {
     var VERSION_2_STATE_1_CONTENTS = {
       1: {text: 'content:', highlighted: false},
       2: {text: '- type: text', highlighted: false},
-      3: {text: '  value: Welcome to the Oppia editor!<br><br>Anything', highlighted: true},
-      4: {text: '    you type here will be shown to the learner playing', highlighted: true},
-      5: {text: '    your exploration.<br><br>If you need more help getting', highlighted: true},
-      6: {text: '    started, check out the Help link in the navigation', highlighted: true},
-      7: {text: '    bar.', highlighted: true},
-      8: {text: 'interaction:', highlighted: true},
-      9: {text: '  customization_args: {}', highlighted: true},
-      10: {text: '  handlers:', highlighted: true},
-      11: {text: '  - name: submit', highlighted: true},
-      12: {text: '    rule_specs:', highlighted: true},
-      13: {text: '    - definition:', highlighted: false},
-      14: {text: '        rule_type: default', highlighted: false},
-      15: {text: '      dest: First State', highlighted: true},
-      16: {text: '      feedback: []', highlighted: false},
-      17: {text: '      param_changes: []', highlighted: false},
-      18: {text: '  id: null', highlighted: true},
-      19: {text: 'param_changes: []', highlighted: false},
-      20: {text: ' ', highlighted: false}
+      3: {text: '  value: \'\'', highlighted: true},
+      4: {text: 'interaction:', highlighted: false},
+      5: {text: '  customization_args: {}', highlighted: false},
+      6: {text: '  handlers:', highlighted: false},
+      7: {text: '  - name: submit', highlighted: false},
+      8: {text: '    rule_specs:', highlighted: false},
+      // Note that highlighting *underneath* a line is still considered a
+      // highlight.
+      9: {text: '    - definition:', highlighted: true},
+      10: {text: '        rule_type: default', highlighted: false},
+      11: {text: '      dest: First State', highlighted: true},
+      12: {text: '      feedback: []', highlighted: false},
+      13: {text: '      param_changes: []', highlighted: false},
+      14: {text: '  id: null', highlighted: true},
+      15: {text: 'param_changes: []', highlighted: false},
+      16: {text: ' ', highlighted: false}
     };
     var STATE_2_STRING =
       'content:\n' +
       '- type: text\n' +
-      '  value: this is state 2\n' +
+      '  value: <p>this is state 2</p>\n' +
       'interaction:\n' +
       '  customization_args:\n' +
       '    buttonText:\n' +

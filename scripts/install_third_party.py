@@ -140,6 +140,20 @@ def download_and_untar_files(
             os.path.join(target_parent_dir, target_root_name))
 
 
+# This is a temporary modified version of UI Bootstrap used for displaying
+# HTML in popovers. It should be replaced with UI Bootstrap when version
+# 0.13.0 is released. See https://github.com/angular-ui/bootstrap/issues/220
+# TODO(sll): Delete this snippet of code after v0.13.0 is released.
+UI_BOOTSTRAP_JBRUNI_URL = (
+    'https://raw.githubusercontent.com/jbruni/jbruni.github.io/master/javascripts')
+UI_BOOTSTRAP_JBRUNI_DST = os.path.join(
+    THIRD_PARTY_STATIC_DIR, 'ui-bootstrap-jbruni-0.13.0')
+UI_BOOTSTRAP_JBRUNI_FILES = ['ui-bootstrap-tpls-0.13.0-jbruni.min.js']
+
+download_files(
+    UI_BOOTSTRAP_JBRUNI_URL, UI_BOOTSTRAP_JBRUNI_DST, UI_BOOTSTRAP_JBRUNI_FILES)
+
+
 # Download all the standalone files.
 YUICOMPRESSOR_REV = '2.4.8'
 YUICOMPRESSOR_FILENAME = 'yuicompressor-%s' % YUICOMPRESSOR_REV
@@ -177,11 +191,11 @@ MATERIAL_DESIGN_ICONS_SOCIAL_URL = (
 MATERIAL_DESIGN_ICONS_DST = os.path.join(
     THIRD_PARTY_STATIC_DIR,
     'material-design-icons-%s' % MATERIAL_DESIGN_ICONS_REV)
-MATERIAL_DESIGN_ICON_ACTION_FILES = ['ic_info_black_48dp.png']
+MATERIAL_DESIGN_ICON_ACTION_FILES = ['ic_info_black_48dp.png', 'ic_help_black_48dp.png', 'ic_home_black_48dp.png']
 MATERIAL_DESIGN_ICON_COMMUNICATION_FILES = ['ic_forum_black_48dp.png']
 MATERIAL_DESIGN_ICON_CONTENT_FILES = ['ic_link_black_48dp.png']
 MATERIAL_DESIGN_ICON_NAVIGATION_FILES = [
-    'ic_more_vert_black_48dp.png', 'ic_menu_black_48dp.png']
+    'ic_more_vert_black_48dp.png', 'ic_menu_black_48dp.png', 'ic_close_black_48dp.png']
 MATERIAL_DESIGN_ICON_SOCIAL_FILES = ['ic_group_black_48dp.png']
 
 # Note that Angular 1.3 requires a jQuery version that is >= 2.1.1.
@@ -269,11 +283,17 @@ SELECT2_ZIP_URL = (
 SELECT2_ZIP_ROOT_NAME = 'select2-%s' % SELECT2_REV
 SELECT2_TARGET_ROOT_NAME = 'select2-%s' % SELECT2_REV
 
-JWYSIWYG_REV = '496497b0772067a0064b627c02893d989ccc7cc9'
-JWYSIWYG_ZIP_URL = (
-    'https://github.com/jwysiwyg/jwysiwyg/archive/%s.zip' % JWYSIWYG_REV)
-JWYSIWYG_ZIP_ROOT_NAME = 'jwysiwyg-%s' % JWYSIWYG_REV
-JWYSIWYG_TARGET_ROOT_NAME = 'jwysiwyg-496497'
+FONTAWESOME_REV='4.3.0'
+FONTAWESOME_ZIP_URL = (
+    'http://fortawesome.github.io/Font-Awesome/assets/font-awesome-%s.zip' % FONTAWESOME_REV)
+FONTAWESOME_ZIP_ROOT_NAME = 'font-awesome-%s' % FONTAWESOME_REV
+FONTAWESOME_TARGET_ROOT_NAME = 'font-awesome-%s' % FONTAWESOME_REV
+
+TEXTANGULAR_REV = '1.3.7'
+TEXTANGULAR_ZIP_URL = (
+    'https://github.com/fraywing/textAngular/archive/v%s.zip' % TEXTANGULAR_REV)
+TEXTANGULAR_ZIP_ROOT_NAME = 'textAngular-%s' % TEXTANGULAR_REV
+TEXTANGULAR_TARGET_ROOT_NAME = 'textAngular-%s' % TEXTANGULAR_REV
 
 JQUERYUI_FILENAME = 'jquery-ui-themes-%s' % JQUERYUI_REV
 JQUERYUI_THEMES_SRC = (
@@ -321,10 +341,10 @@ NG_JOYRIDE_ZIP_URL = (
 NG_JOYRIDE_ZIP_ROOT_NAME = 'ng-joyride-%s' % NG_JOYRIDE_REV
 NG_JOYRIDE_TARGET_ROOT_NAME = 'ng-joyride-%s' % NG_JOYRIDE_REV
 
-BOOTSTRAP_REV = '3.1.1'
+BOOTSTRAP_REV = '3.3.4'
 BOOTSTRAP_ROOT_NAME = 'bootstrap-%s-dist' % BOOTSTRAP_REV
 BOOTSTRAP_ZIP_URL = (
-    'https://github.com/twbs/bootstrap/releases/download/v3.1.1/%s.zip'
+    'https://github.com/twbs/bootstrap/releases/download/v3.3.4/%s.zip'
     % BOOTSTRAP_ROOT_NAME)
 BOOTSTRAP_ZIP_ROOT_NAME = BOOTSTRAP_ROOT_NAME
 BOOTSTRAP_TARGET_ROOT_NAME = 'bootstrap-%s' % BOOTSTRAP_REV
@@ -352,8 +372,11 @@ download_and_unzip_files(
     SELECT2_ZIP_URL, THIRD_PARTY_STATIC_DIR,
     SELECT2_ZIP_ROOT_NAME, SELECT2_TARGET_ROOT_NAME)
 download_and_unzip_files(
-    JWYSIWYG_ZIP_URL, THIRD_PARTY_STATIC_DIR,
-    JWYSIWYG_ZIP_ROOT_NAME, JWYSIWYG_TARGET_ROOT_NAME)
+    FONTAWESOME_ZIP_URL, THIRD_PARTY_STATIC_DIR,
+    FONTAWESOME_ZIP_ROOT_NAME, FONTAWESOME_TARGET_ROOT_NAME)
+download_and_unzip_files(
+    TEXTANGULAR_ZIP_URL, THIRD_PARTY_STATIC_DIR,
+    TEXTANGULAR_ZIP_ROOT_NAME, TEXTANGULAR_TARGET_ROOT_NAME)
 download_and_unzip_files(
     JQUERYUI_THEMES_SRC,
     os.path.join(THIRD_PARTY_STATIC_DIR, 'jqueryui-%s' % JQUERYUI_REV),
