@@ -821,6 +821,136 @@ oppia.factory('statePropertyService', [
   };
 }]);
 
+// TODO(anuzis/vjoisar): make service DRY with explorationStatesService
+// Data service for keeping track of the exploration's gadgets.
+oppia.factory('explorationGadgetsService', [
+    '$log', '$modal', '$filter', '$location', '$rootScope',
+    'changeListService', 'editorContextService', 'warningsData',
+    'validatorsService',
+    function($log, $modal, $filter, $location, $rootScope,
+             changeListService, editorContextService, warningsData,
+             validatorsService) {
+  var _gadgets = null;
+  return {
+    setGadgets: function(value) {
+      _gadgets = angular.copy(value);
+    },
+    getGadgets: function() {
+      return angular.copy(_gadgets);
+    },
+    getGadget: function(gadgetName) {
+      return angular.copy(_gadgets[gadgetName]);
+    },
+    setGadget: function(gadgetName, gadgetData) {
+      _gadgets[gadgetName] = angular.copy(gadgetData);
+      $rootScope.$broadcast('refreshGraph');
+    },
+    isNewGadgetNameValid: function(newGadgetName, showWarnings) {
+      if (_gadgets[newGadgetName]) {
+        if (showWarnings) {
+          warningsData.addWarning('A gadget with this name already exists.');
+        }
+        return false;
+      }
+      return (
+        // TODO(anuzis/vjoisar): implement validatorsService.isValidGadgetName
+        validatorsService.isValidGadgetName(newGadgetName, showWarnings));
+    },
+    generateUniqueGadgetName: function(gadgetInstance) {
+      if (!_gadgets[gadgetInstance.id]) {
+        return gadgetInstance.id;
+      } else {
+        var baseGadgetName = gadgetInstance.id;
+        var uniqueInteger = 2;
+        var generatedGadgetName = baseGadgetName + uniqueInteger;
+        while (_gadgets[generatedGadgetName]) {
+          uniqueInteger++;
+          generatedGadgetName = baseGadgetName + uniqueInteger;
+        }
+        return generatedGadgetName;
+      }
+    },
+    addGadget: function(newGadgetName, successCallback) {
+      newGadgetName = $filter('normalizeWhitespace')(newGadgetName);
+      if (!validatorsService.isValidGadgetName(newGadgetName, true)) {
+        return;
+      }
+      if (!!_gadgets[newGadgetName]) {
+        warningsData.addWarning('A gadget with this name already exists.');
+        return;
+      }
+      warningsData.clear();
+
+      _gadgets[newGadgetName] = newGadgetTemplateService.getNewGadgetTemplate(
+        newGadgetName);
+      // TODO(anuzis/vjoisar): implement changeListService.addGadget
+      changeListService.addGadget(newGadgetName);
+      if (successCallback) {
+        successCallback(newGadgetName);
+      }
+    },
+    deleteGadget: function(deleteGadgetName) {
+      warningsData.clear();
+
+      if (!_gadgets[deleteGadgetName]) {
+        // TODO(anuzis/vjoisar): Remove this warning if it's impossible to
+        // trigger based on our UI. (e.g. if a delete button is only present
+        // on gadgets in a delete-able state.)
+        warningsData.addWarning('No gadget with name ' + deleteGadgetName + ' exists.');
+        return;
+      }
+
+      $modal.open({
+        // TODO(anuzis/vjoisar): implement script ID for 'modals/deleteGadget'
+        // based on pattern for modals/deleteState, but outside
+        // exploration_graph.html
+        templateUrl: 'modals/deleteGadget',
+        backdrop: true,
+        resolve: {
+          deleteGadgetName: function() {
+            return deleteGadgetName;
+          }
+        },
+        controller: [
+          '$scope', '$modalInstance', 'deleteGadgetName',
+          function($scope, $modalInstance, deleteGadgetName) {
+            $scope.deleteGadgetName = deleteGadgetName;
+
+            $scope.reallyDelete = function() {
+              $modalInstance.close(deleteGadgetName);
+            };
+
+            $scope.cancel = function() {
+              $modalInstance.dismiss('cancel');
+              warningsData.clear();
+            };
+          }
+        ]
+      }).result.then(function(deleteGadgetName) {
+        delete _gadgets[deleteGadgetName];
+        changeListService.deleteGadget(deleteGadgetName);
+      });
+    },
+    renameGadget: function(oldGadgetName, newGadgetName) {
+      newGadgetName = $filter('normalizeWhitespace')(newGadgetName);
+      if (!validatorsService.isValidGadgetName(newGadgetName, true)) {
+        return;
+      }
+      if (!!_gadgets[newGadgetName]) {
+        warningsData.addWarning('A gadget with this name already exists.');
+        return;
+      }
+      warningsData.clear();
+
+      _gadgets[newGadgetName] = angular.copy(_gadgets[oldGadgetName]);
+      delete _gadgets[oldGadgetName];
+
+      // TODO(anuzis/vjoisar): Implement changeListService.renameGadget
+      changeListService.renameGadget(newGadgetName, oldGadgetName);
+    }
+  };
+}]);
+
 // A data service that stores the current interaction id.
 // TODO(sll): Add validation.
 oppia.factory('stateInteractionIdService', [
